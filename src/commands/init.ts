@@ -8,6 +8,8 @@ import { generateHooks } from '../generators/hooks.js'
 import { addToShellProfile } from '../generators/env-file.js'
 import { writeTextFile, writeJsonFile } from '../utils/fs.js'
 import { saveCredentials } from '../core/credential-store.js'
+import { loadGlobalConfig } from '../core/config.js'
+import { runLogin } from './login.js'
 import { askInitPrompts } from '../prompts/init-prompts.js'
 import { join } from 'node:path'
 import type { ForgeProjectManifest } from '../types/index.js'
@@ -20,6 +22,14 @@ export function initCommand(): Command {
     .action(async () => {
       const cwd = process.cwd()
       log.title('claude-forge init')
+
+      // Ensure user has a config repo before proceeding
+      const globalConfig = await loadGlobalConfig()
+      if (!globalConfig) {
+        log.warn('No config repo configured. Let\'s set that up first.\n')
+        await runLogin()
+        log.blank()
+      }
 
       const detected = await detectStack(cwd)
       if (detected.framework) {

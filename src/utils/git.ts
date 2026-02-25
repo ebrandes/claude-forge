@@ -83,3 +83,25 @@ export async function gitHasChanges(repoDir: string): Promise<boolean> {
   const result = await exec('git', ['status', '--porcelain'], repoDir)
   return result.stdout.length > 0
 }
+
+export async function ghAddTopics(owner: string, name: string, topics: string[]): Promise<void> {
+  await exec('gh', ['repo', 'edit', `${owner}/${name}`, ...topics.flatMap(t => ['--add-topic', t])])
+}
+
+export interface GhRepo {
+  nameWithOwner: string
+  name: string
+  isPrivate: boolean
+}
+
+export async function ghFindReposByTopic(topic: string): Promise<GhRepo[]> {
+  try {
+    const result = await exec('gh', [
+      'repo', 'list', '--topic', topic, '--json', 'nameWithOwner,name,isPrivate', '--limit', '10',
+    ])
+    if (!result.stdout) return []
+    return JSON.parse(result.stdout) as GhRepo[]
+  } catch {
+    return []
+  }
+}
