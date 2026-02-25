@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { log } from '../utils/logger.js'
 import { detectStack } from '../utils/detect-stack.js'
-import { getPresetByName, listPresetNames } from '../presets/index.js'
+import { getPresetByName } from '../presets/index.js'
 import { generateClaudeMd } from '../generators/claude-md.js'
 import { generateSettings } from '../generators/settings.js'
 import { generateHooks } from '../generators/hooks.js'
@@ -32,7 +32,7 @@ export function initCommand(): Command {
       }
       log.blank()
 
-      const answers = await askInitPrompts(detected, listPresetNames())
+      const answers = await askInitPrompts(detected)
 
       const preset = getPresetByName(answers.preset)
       if (!preset) {
@@ -102,6 +102,7 @@ export function initCommand(): Command {
         sections: answers.enabledSections,
         hooks: answers.enabledHooks,
         mcps: answers.enabledMcps,
+        skills: [],
         customSections: [],
         managedFiles: [
           'CLAUDE.md',

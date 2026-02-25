@@ -27,7 +27,6 @@ export interface InitAnswers {
 
 export async function askInitPrompts(
   detected: DetectedStack,
-  availablePresets: string[],
 ): Promise<InitAnswers> {
   const collectedTokens: Record<string, string> = {}
   let addApiKeyToZshrc = false
@@ -47,7 +46,7 @@ export async function askInitPrompts(
     } else {
       log.warn('ANTHROPIC_API_KEY is not set.')
       log.dim('  Get one at: https://console.anthropic.com/settings/keys')
-      const token = await password({ message: 'Paste token (or Enter to skip):' })
+      const token = await password({ message: 'Paste token (or Enter to skip):', mask: '*' })
       if (token) {
         collectedTokens['ANTHROPIC_API_KEY'] = token
         addApiKeyToZshrc = await confirm({
@@ -69,15 +68,38 @@ export async function askInitPrompts(
     message: 'Describe your project in a few words:',
   })
 
-  const presets = listPresets()
-  const presetName = await select({
-    message: 'Select a preset:',
-    choices: presets.map(p => ({
-      name: `${p.displayName} — ${p.description}`,
-      value: p.name,
-    })),
-    default: detected.presetSuggestion ?? 'next-app',
-  })
+  let presetName: string
+
+  if (detected.presetSuggestion && detected.framework) {
+    log.success(`Detected: ${detected.framework} → using "${detected.presetSuggestion}" preset`)
+    const useDetected = await confirm({
+      message: `Use "${detected.presetSuggestion}" preset?`,
+      default: true,
+    })
+
+    if (useDetected) {
+      presetName = detected.presetSuggestion
+    } else {
+      const presets = listPresets()
+      presetName = await select({
+        message: 'Select a preset:',
+        choices: presets.map(p => ({
+          name: `${p.displayName} — ${p.description}`,
+          value: p.name,
+        })),
+      })
+    }
+  } else {
+    const presets = listPresets()
+    presetName = await select({
+      message: 'Select a preset:',
+      choices: presets.map(p => ({
+        name: `${p.displayName} — ${p.description}`,
+        value: p.name,
+      })),
+      default: 'next-app',
+    })
+  }
 
   const preset = getPresetByName(presetName)!
 
@@ -184,7 +206,7 @@ export async function askInitPrompts(
 
     log.warn(`${def.displayName} requires a token.`)
     if (def.setupUrl) log.dim(`  Get one at: ${def.setupUrl}`)
-    const token = await password({ message: `Paste ${def.authEnvVar} (or Enter to skip):` })
+    const token = await password({ message: `Paste ${def.authEnvVar} (or Enter to skip):`, mask: '*' })
     if (token) {
       collectedTokens[def.authEnvVar] = token
     }

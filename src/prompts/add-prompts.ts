@@ -63,6 +63,6 @@ export async function askForAuthToken(
     log.dim(`  Get your token at: ${setupUrl}`)
   }
 
-  const token = await password({ message: `Paste ${envVarName} (or Enter to skip):` })
+  const token = await password({ message: `Paste ${envVarName} (or Enter to skip):`, mask: '*' })
   return token || null
 }

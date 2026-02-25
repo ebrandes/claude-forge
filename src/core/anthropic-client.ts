@@ -18,7 +18,7 @@ export async function resolveApiKey(): Promise<string> {
   log.warn('ANTHROPIC_API_KEY is not set.')
   log.dim('  Get one at: https://console.anthropic.com/settings/keys')
 
-  const token = await password({ message: 'Paste your Anthropic API key:' })
+  const token = await password({ message: 'Paste your Anthropic API key:', mask: '*' })
   if (!token) {
     log.error('API key is required for AI-assisted features.')
     process.exit(1)
