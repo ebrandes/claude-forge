@@ -19,29 +19,21 @@ Claude Code works best with good context. But setting up `CLAUDE.md`, hooks, per
 │         Your GitHub Config Repo                   │
 │         (private, auto-created)                   │
 │                                                    │
-│  next-app/                                         │
-│  ├── CLAUDE.md                                     │
-│  ├── .claude/settings.json                         │
-│  ├── .claude/hooks/check-ts.sh                     │
-│  ├── .claude/commands/gen-component.md             │
-│  └── manifest.json                                 │
-│                                                    │
-│  fastify-api/                                      │
-│  ├── CLAUDE.md                                     │
-│  ├── .claude/settings.json                         │
-│  └── manifest.json                                 │
-└───────────┬─────────────────────┬─────────────────┘
-            │                     │
-       claude-forge          claude-forge
-           push                  pull
-            │                     │
-   ┌────────▼────────┐   ┌───────▼────────┐
-   │ my-saas (Next)  │   │ my-shop (Next) │
-   │ push → next-app │   │ pull ← next-app│
-   └─────────────────┘   └────────────────┘
+│  CLAUDE.md                                         │
+│  .claude/settings.json                             │
+│  .claude/hooks/check-ts.sh                         │
+│  .claude/commands/gen-component.md                 │
+│  manifest.json                                     │
+└───────────┬──────────┬──────────┬─────────────────┘
+            │          │          │
+           push       pull       pull
+            │          │          │
+   ┌────────▼───┐ ┌────▼────┐ ┌──▼──────────┐
+   │  my-saas   │ │ my-shop │ │  my-api     │
+   └────────────┘ └─────────┘ └─────────────┘
 ```
 
-Configs are organized **by preset**, not by project. All your Next.js projects share the same `next-app/` configs. All your Fastify APIs share `fastify-api/`. Push once, pull everywhere.
+One set of configs, shared across **all** your projects. Push from any project, pull into any other. Your `CLAUDE.md`, hooks, and skills live in a single private repo.
 
 ## Install
 
@@ -61,13 +53,13 @@ claude-forge init
 
 # 2. Save your configs to the central repo
 claude-forge push
-# → Pushes to github.com/you/my-claude-configs/next-app/
+# → Pushes to github.com/you/my-claude-configs
 
-# 3. Reuse in another project with the same stack
-cd another-next-project
+# 3. Reuse in any other project
+cd another-project
 claude-forge init
 claude-forge pull
-# → Pulls configs from next-app/ — same rules, same hooks, same skills
+# → Same CLAUDE.md, same hooks, same skills. Zero manual setup.
 ```
 
 ## Commands
@@ -94,7 +86,7 @@ Generates:
 
 ### `claude-forge push`
 
-Push configs to your central config repo, organized by preset.
+Push configs to your central config repo.
 
 ```bash
 claude-forge push
@@ -102,15 +94,14 @@ claude-forge push -m "added testing rules"
 ```
 
 ```
-# Example: pushing from a Next.js project
 claude-forge push
 → Config repo: you/my-claude-configs
-→ Syncing preset "next-app"
+→ Syncing configs
 ✓ Synced CLAUDE.md
 ✓ Synced .claude/settings.json
 ✓ Synced .claude/hooks/check-ts.sh
-✓ Pushed 3 files to "you/my-claude-configs/next-app"
-  Any project using this preset can now pull these configs.
+✓ Pushed 3 files to "you/my-claude-configs"
+  Run "claude-forge pull" in any project to use these configs.
 ```
 
 ### `claude-forge pull`
@@ -122,7 +113,7 @@ claude-forge pull
 claude-forge pull --force    # overwrite without confirmation
 ```
 
-Pulls from the preset matching your project. If local files differ, you'll be asked to confirm before overwriting.
+If local files differ from the repo version, you'll be asked to confirm before overwriting.
 
 ### `claude-forge diff`
 
@@ -216,7 +207,7 @@ claude-forge preset next-app
 | `node-lib` | Node.js library |
 | `monorepo` | Monorepo (Turborepo, Nx) |
 
-Each preset includes curated sections and hooks optimized for that stack. Projects using the same preset share configs.
+Each preset includes curated sections and hooks optimized for that stack.
 
 ## Sections
 
@@ -264,29 +255,29 @@ your-project/
 # === First time setup ===
 npm install -g claude-forge
 
-# === Project 1: Next.js SaaS ===
+# === Project 1: set up your configs ===
 cd ~/projects/my-saas
 claude-forge init                  # sets up config repo + generates configs
 claude-forge add hook -d "check bundle size"
 claude-forge add skill -d "generate API route with validation"
-claude-forge push                  # saves to config repo under next-app/
+claude-forge push                  # saves to your config repo
 
-# === Project 2: Another Next.js app ===
+# === Project 2: reuse everywhere ===
 cd ~/projects/my-shop
-claude-forge init                  # detects Next.js → same preset
-claude-forge pull                  # pulls everything from next-app/
+claude-forge init
+claude-forge pull                  # pulls configs from your repo
 # → Same CLAUDE.md, same hooks, same skills. Zero manual setup.
 
-# === Project 3: Fastify API ===
+# === Project 3: same thing ===
 cd ~/projects/my-api
-claude-forge init                  # detects Fastify → different preset
-claude-forge push                  # saves to config repo under fastify-api/
+claude-forge init
+claude-forge pull                  # same configs, different project
 
 # === New machine ===
 npm install -g claude-forge
 cd ~/projects/my-saas
 claude-forge init                  # finds existing config repo automatically
-claude-forge pull                  # restores all next-app configs
+claude-forge pull                  # restores all configs
 ```
 
 ## License

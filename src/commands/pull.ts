@@ -26,20 +26,20 @@ export function pullCommand(): Command {
       const sync = new GitHubSync()
       await sync.pull()
 
-      const presetPath = manifest.preset
-      const hasPreset = await sync.fileExistsInRepo(presetPath)
+      const repoDir = sync.getRepoDir()
+      const hasConfigs = await sync.fileExistsInRepo('manifest.json')
 
-      if (!hasPreset) {
-        log.error(`No synced configs found for preset "${presetPath}". Run "claude-forge push" first.`)
+      if (!hasConfigs) {
+        log.error('No synced configs found. Run "claude-forge push" first.')
         process.exit(1)
       }
 
       log.info(`Config repo: ${globalConfig.repoOwner}/${globalConfig.repoName}`)
-      log.step(`Pulling preset "${presetPath}"`)
+      log.step('Pulling configs')
       let updated = 0
 
       for (const file of manifest.managedFiles) {
-        const remotePath = join(sync.getRepoDir(), presetPath, file)
+        const remotePath = join(repoDir, file)
         const localPath = join(cwd, file)
 
         if (!await fileExists(remotePath)) {
@@ -79,6 +79,6 @@ export function pullCommand(): Command {
       })
 
       log.blank()
-      log.success(`Pulled ${updated} files from "${globalConfig.repoOwner}/${globalConfig.repoName}/${presetPath}"`)
+      log.success(`Pulled ${updated} files from "${globalConfig.repoOwner}/${globalConfig.repoName}"`)
     })
 }

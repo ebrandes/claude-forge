@@ -25,9 +25,9 @@ export function pushCommand(): Command {
       const sync = new GitHubSync()
       await sync.pull()
 
-      const presetPath = manifest.preset
+      const repoDir = sync.getRepoDir()
       log.info(`Config repo: ${globalConfig.repoOwner}/${globalConfig.repoName}`)
-      log.step(`Syncing preset "${presetPath}"`)
+      log.step('Syncing configs')
 
       for (const file of manifest.managedFiles) {
         const sourcePath = join(cwd, file)
@@ -36,23 +36,23 @@ export function pushCommand(): Command {
           continue
         }
 
-        const destPath = join(sync.getRepoDir(), presetPath, file)
+        const destPath = join(repoDir, file)
         await ensureDir(join(destPath, '..'))
         await cp(sourcePath, destPath, { recursive: true })
         log.file('Synced', file)
       }
 
-      const manifestDest = join(sync.getRepoDir(), presetPath, 'manifest.json')
+      const manifestDest = join(repoDir, 'manifest.json')
       const updatedManifest = { ...manifest, lastSynced: new Date().toISOString() }
       await writeJsonFile(manifestDest, updatedManifest)
 
       const commitMsg = options.message
-        ?? `sync: ${presetPath} preset (${new Date().toISOString().split('T')[0]})`
+        ?? `sync: update configs (${new Date().toISOString().split('T')[0]})`
 
       await sync.commitAndPush(commitMsg)
 
       log.blank()
-      log.success(`Pushed ${manifest.managedFiles.length} files to "${globalConfig.repoOwner}/${globalConfig.repoName}/${presetPath}"`)
-      log.dim('  Any project using this preset can now pull these configs.')
+      log.success(`Pushed ${manifest.managedFiles.length} files to "${globalConfig.repoOwner}/${globalConfig.repoName}"`)
+      log.dim('  Run "claude-forge pull" in any project to use these configs.')
     })
 }

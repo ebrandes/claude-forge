@@ -25,13 +25,13 @@ export function diffCommand(): Command {
       const sync = new GitHubSync()
       await sync.pull()
 
-      const presetPath = manifest.preset
-      log.info(`Comparing with: ${globalConfig.repoOwner}/${globalConfig.repoName}/${presetPath}`)
+      const repoDir = sync.getRepoDir()
+      log.info(`Comparing with: ${globalConfig.repoOwner}/${globalConfig.repoName}`)
       let hasDiffs = false
 
       for (const file of manifest.managedFiles) {
         const localPath = join(cwd, file)
-        const remotePath = join(sync.getRepoDir(), presetPath, file)
+        const remotePath = join(repoDir, file)
 
         const localContent = await readTextFile(localPath) ?? ''
         const remoteContent = await readTextFile(remotePath) ?? ''
