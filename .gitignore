@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.claude-forge.json
+.env.local
+.claude/settings.local.json

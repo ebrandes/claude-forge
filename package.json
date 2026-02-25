@@ -1,0 +1,40 @@
+{
+  "name": "claude-forge",
+  "version": "1.0.0",
+  "description": "CLI for managing Claude Code configurations across projects",
+  "type": "module",
+  "bin": {
+    "claude-forge": "./dist/bin/claude-forge.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/bin/claude-forge.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "claude",
+    "cli",
+    "scaffolding",
+    "configuration",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@inquirer/prompts": "^7.3.2",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "diff": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/diff": "^6.0.0",
+    "@types/node": "^22.13.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0"
+  }
+}
