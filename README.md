@@ -10,39 +10,38 @@ Claude Code works best with good context. But setting up `CLAUDE.md`, hooks, per
 
 1. **Generate** — Detects your stack and creates a tailored `CLAUDE.md` with best practices, hooks, and permissions
 2. **Enhance** — Uses the Anthropic API to generate hooks, MCPs, and skills from natural language descriptions
-3. **Sync** — Stores all your configs in a **private GitHub repo** so you can push, pull, and share across every project and machine
+3. **Sync** — Stores your configs in a **private GitHub repo** organized by preset, so every project with the same stack shares the same rules
 
 ## How It Works
 
 ```
-┌─────────────────────────────────────────────────────┐
-│              Your GitHub Config Repo                 │
-│              (private, auto-created)                 │
-│                                                      │
-│  projects/                                           │
-│  ├── my-saas-app/                                    │
-│  │   ├── CLAUDE.md                                   │
-│  │   ├── .claude/settings.json                       │
-│  │   ├── .claude/hooks/pre-commit-lint.sh            │
-│  │   └── manifest.json                               │
-│  ├── my-api/                                         │
-│  │   ├── CLAUDE.md                                   │
-│  │   ├── .claude/settings.json                       │
-│  │   └── manifest.json                               │
-│  └── my-mobile-app/                                  │
-│      └── ...                                         │
-└──────────────┬──────────────────┬────────────────────┘
-               │                  │
-          claude-forge        claude-forge
-              push                pull
-               │                  │
-      ┌────────▼───┐      ┌──────▼──────┐
-      │ Project A  │      │  Project B  │
-      │ (laptop)   │      │ (desktop)   │
-      └────────────┘      └─────────────┘
+┌──────────────────────────────────────────────────┐
+│         Your GitHub Config Repo                   │
+│         (private, auto-created)                   │
+│                                                    │
+│  next-app/                                         │
+│  ├── CLAUDE.md                                     │
+│  ├── .claude/settings.json                         │
+│  ├── .claude/hooks/check-ts.sh                     │
+│  ├── .claude/commands/gen-component.md             │
+│  └── manifest.json                                 │
+│                                                    │
+│  fastify-api/                                      │
+│  ├── CLAUDE.md                                     │
+│  ├── .claude/settings.json                         │
+│  └── manifest.json                                 │
+└───────────┬─────────────────────┬─────────────────┘
+            │                     │
+       claude-forge          claude-forge
+           push                  pull
+            │                     │
+   ┌────────▼────────┐   ┌───────▼────────┐
+   │ my-saas (Next)  │   │ my-shop (Next) │
+   │ push → next-app │   │ pull ← next-app│
+   └─────────────────┘   └────────────────┘
 ```
 
-When you run `claude-forge login`, it creates (or connects to) a **private GitHub repository** that becomes your central config hub. Every project you initialize gets its own folder inside that repo. Use `push` to save and `pull` to restore — across projects, machines, or teammates.
+Configs are organized **by preset**, not by project. All your Next.js projects share the same `next-app/` configs. All your Fastify APIs share `fastify-api/`. Push once, pull everywhere.
 
 ## Install
 
@@ -55,41 +54,23 @@ Requires Node.js >= 20 and [GitHub CLI](https://cli.github.com/) (`gh`).
 ## Quick Start
 
 ```bash
-# 1. Connect your config repo (one-time setup)
-claude-forge login
-# → Creates a private repo like github.com/you/my-claude-configs
-
-# 2. Initialize any project
+# 1. Initialize a project (auto-creates config repo on first run)
 cd your-project
 claude-forge init
-# → Detects stack, generates CLAUDE.md, hooks, permissions
+# → Sets up config repo, detects stack, generates CLAUDE.md, hooks, permissions
 
-# 3. Save your configs
+# 2. Save your configs to the central repo
 claude-forge push
-# → Syncs everything to your config repo
+# → Pushes to github.com/you/my-claude-configs/next-app/
 
-# 4. Restore on another machine or project
+# 3. Reuse in another project with the same stack
+cd another-next-project
+claude-forge init
 claude-forge pull
-# → Pulls configs from your repo
+# → Pulls configs from next-app/ — same rules, same hooks, same skills
 ```
 
 ## Commands
-
-### `claude-forge login`
-
-Connect to your config repo. This is the first thing you should run.
-
-```bash
-claude-forge login
-```
-
-What happens:
-- Authenticates with GitHub via `gh` CLI
-- Asks for a repo name (default: `my-claude-configs`)
-- Creates a **private repo** on your GitHub if it doesn't exist
-- Clones it locally for syncing
-
-You only need to do this once per machine.
 
 ### `claude-forge init`
 
@@ -99,11 +80,12 @@ Initialize Claude Code configuration for the current project.
 claude-forge init
 ```
 
-The interactive setup will:
-1. Ask for your Anthropic API key (for AI-assisted features)
-2. Auto-detect your framework (Next.js, React, Fastify, Flutter, etc.)
-3. Let you pick sections, hooks, and quality settings
-4. Generate all config files
+On first run, it automatically sets up your config repo (same as `claude-forge login`). Then:
+
+1. Asks for your Anthropic API key (for AI-assisted features)
+2. Auto-detects your framework (Next.js, React, Fastify, Flutter, etc.)
+3. Lets you pick sections, hooks, and quality settings
+4. Generates all config files
 
 Generates:
 - `CLAUDE.md` — AI guidelines tailored to your stack
@@ -112,35 +94,45 @@ Generates:
 
 ### `claude-forge push`
 
-Push your project's configs to the sync repo.
+Push configs to your central config repo, organized by preset.
 
 ```bash
 claude-forge push
-claude-forge push -m "added new hooks"
+claude-forge push -m "added testing rules"
 ```
 
-Saves `CLAUDE.md`, `.claude/settings.json`, hooks, and the project manifest to your config repo under `projects/{project-name}/`.
+```
+# Example: pushing from a Next.js project
+claude-forge push
+→ Config repo: you/my-claude-configs
+→ Syncing preset "next-app"
+✓ Synced CLAUDE.md
+✓ Synced .claude/settings.json
+✓ Synced .claude/hooks/check-ts.sh
+✓ Pushed 3 files to "you/my-claude-configs/next-app"
+  Any project using this preset can now pull these configs.
+```
 
 ### `claude-forge pull`
 
-Pull configs from the sync repo into the current project.
+Pull configs from the central repo into the current project.
 
 ```bash
 claude-forge pull
 claude-forge pull --force    # overwrite without confirmation
 ```
 
-If local files differ from the synced version, you'll be asked to confirm before overwriting.
+Pulls from the preset matching your project. If local files differ, you'll be asked to confirm before overwriting.
 
 ### `claude-forge diff`
 
-Compare local configs with the synced version.
+Compare local configs with the central repo version.
 
 ```bash
 claude-forge diff
 ```
 
-Shows a colored diff (like `git diff`) for each managed file.
+Shows a colored diff for each managed file against what's in the config repo.
 
 ### `claude-forge add hook`
 
@@ -173,6 +165,20 @@ claude-forge add skill -d "generate React component with tests"
 
 Creates `.claude/commands/{name}.md` — use it as `/name` inside Claude Code.
 
+### `claude-forge login`
+
+Manually configure the config repo (normally handled by `init` automatically).
+
+```bash
+claude-forge login
+```
+
+What happens:
+- Authenticates with GitHub via `gh` CLI
+- Searches for existing config repos (by `claude-forge` topic)
+- Creates a **private repo** if none found
+- Clones it locally for syncing
+
 ### `claude-forge doctor`
 
 Validate your environment, API keys, and project configuration.
@@ -180,8 +186,6 @@ Validate your environment, API keys, and project configuration.
 ```bash
 claude-forge doctor
 ```
-
-Checks: `gh` CLI, GitHub auth, API keys, sync repo, project files.
 
 ### `claude-forge list`
 
@@ -212,7 +216,7 @@ claude-forge preset next-app
 | `node-lib` | Node.js library |
 | `monorepo` | Monorepo (Turborepo, Nx) |
 
-Each preset includes curated sections and hooks optimized for that stack.
+Each preset includes curated sections and hooks optimized for that stack. Projects using the same preset share configs.
 
 ## Sections
 
@@ -257,37 +261,32 @@ your-project/
 ## Full Workflow Example
 
 ```bash
-# === Machine A ===
-
-# One-time setup
+# === First time setup ===
 npm install -g claude-forge
-claude-forge login
-# → Repo created: github.com/you/my-claude-configs
 
-# Project 1: Next.js app
+# === Project 1: Next.js SaaS ===
 cd ~/projects/my-saas
-claude-forge init          # detects Next.js, generates configs
-claude-forge add hook -d "check bundle size before commit"
+claude-forge init                  # sets up config repo + generates configs
+claude-forge add hook -d "check bundle size"
 claude-forge add skill -d "generate API route with validation"
-claude-forge push          # saved to config repo
+claude-forge push                  # saves to config repo under next-app/
 
-# Project 2: Fastify API
+# === Project 2: Another Next.js app ===
+cd ~/projects/my-shop
+claude-forge init                  # detects Next.js → same preset
+claude-forge pull                  # pulls everything from next-app/
+# → Same CLAUDE.md, same hooks, same skills. Zero manual setup.
+
+# === Project 3: Fastify API ===
 cd ~/projects/my-api
-claude-forge init          # detects Fastify, different preset
-claude-forge push
+claude-forge init                  # detects Fastify → different preset
+claude-forge push                  # saves to config repo under fastify-api/
 
-# === Machine B (new laptop, same projects) ===
-
+# === New machine ===
 npm install -g claude-forge
-claude-forge login         # connects to same repo
-
 cd ~/projects/my-saas
-claude-forge init          # same preset
-claude-forge pull          # restores all configs, hooks, skills
-
-cd ~/projects/my-api
-claude-forge init
-claude-forge pull          # done — same setup as Machine A
+claude-forge init                  # finds existing config repo automatically
+claude-forge pull                  # restores all next-app configs
 ```
 
 ## License

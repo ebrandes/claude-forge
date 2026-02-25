@@ -9,13 +9,13 @@ import { fileExists, readTextFile, ensureDir } from '../utils/fs.js'
 
 export function pullCommand(): Command {
   return new Command('pull')
-    .description('Pull project configs from the sync repository')
+    .description('Pull configs from your central config repository')
     .option('--force', 'Overwrite without confirmation')
     .action(async (options) => {
       const cwd = process.cwd()
       log.title('claude-forge pull')
 
-      await ensureLoggedIn()
+      const globalConfig = await ensureLoggedIn()
 
       const manifest = await loadProjectManifest(cwd)
       if (!manifest) {
@@ -26,23 +26,24 @@ export function pullCommand(): Command {
       const sync = new GitHubSync()
       await sync.pull()
 
-      const projectPath = `projects/${manifest.projectName}`
-      const hasProject = await sync.fileExistsInRepo(projectPath)
+      const presetPath = manifest.preset
+      const hasPreset = await sync.fileExistsInRepo(presetPath)
 
-      if (!hasProject) {
-        log.error(`No synced data found for "${manifest.projectName}". Run "claude-forge push" first.`)
+      if (!hasPreset) {
+        log.error(`No synced configs found for preset "${presetPath}". Run "claude-forge push" first.`)
         process.exit(1)
       }
 
-      log.step(`Pulling from ${projectPath}/`)
+      log.info(`Config repo: ${globalConfig.repoOwner}/${globalConfig.repoName}`)
+      log.step(`Pulling preset "${presetPath}"`)
       let updated = 0
 
       for (const file of manifest.managedFiles) {
-        const remotePath = join(sync.getRepoDir(), projectPath, file)
+        const remotePath = join(sync.getRepoDir(), presetPath, file)
         const localPath = join(cwd, file)
 
         if (!await fileExists(remotePath)) {
-          log.dim(`  Skip (not in remote): ${file}`)
+          log.dim(`  Skip (not in repo): ${file}`)
           continue
         }
 
@@ -78,6 +79,6 @@ export function pullCommand(): Command {
       })
 
       log.blank()
-      log.success(`Pulled ${updated} files for "${manifest.projectName}"`)
+      log.success(`Pulled ${updated} files from "${globalConfig.repoOwner}/${globalConfig.repoName}/${presetPath}"`)
     })
 }

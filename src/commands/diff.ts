@@ -5,16 +5,16 @@ import { createTwoFilesPatch } from 'diff'
 import { log } from '../utils/logger.js'
 import { loadProjectManifest, ensureLoggedIn } from '../core/config.js'
 import { GitHubSync } from '../core/github-sync.js'
-import { fileExists, readTextFile } from '../utils/fs.js'
+import { readTextFile } from '../utils/fs.js'
 
 export function diffCommand(): Command {
   return new Command('diff')
-    .description('Compare local configs with the sync repository')
+    .description('Compare local configs with the central config repository')
     .action(async () => {
       const cwd = process.cwd()
       log.title('claude-forge diff')
 
-      await ensureLoggedIn()
+      const globalConfig = await ensureLoggedIn()
 
       const manifest = await loadProjectManifest(cwd)
       if (!manifest) {
@@ -25,12 +25,13 @@ export function diffCommand(): Command {
       const sync = new GitHubSync()
       await sync.pull()
 
-      const projectPath = `projects/${manifest.projectName}`
+      const presetPath = manifest.preset
+      log.info(`Comparing with: ${globalConfig.repoOwner}/${globalConfig.repoName}/${presetPath}`)
       let hasDiffs = false
 
       for (const file of manifest.managedFiles) {
         const localPath = join(cwd, file)
-        const remotePath = join(sync.getRepoDir(), projectPath, file)
+        const remotePath = join(sync.getRepoDir(), presetPath, file)
 
         const localContent = await readTextFile(localPath) ?? ''
         const remoteContent = await readTextFile(remotePath) ?? ''
@@ -39,7 +40,7 @@ export function diffCommand(): Command {
 
         hasDiffs = true
         const patch = createTwoFilesPatch(
-          `remote/${file}`,
+          `repo/${file}`,
           `local/${file}`,
           remoteContent,
           localContent,
