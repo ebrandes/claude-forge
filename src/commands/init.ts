@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { join } from 'node:path'
 import { cp } from 'node:fs/promises'
-import { select } from '@inquirer/prompts'
+import { select, confirm } from '@inquirer/prompts'
 import { log } from '../utils/logger.js'
 import { detectStack } from '../utils/detect-stack.js'
 import { getPresetByName } from '../presets/index.js'
@@ -26,36 +26,64 @@ export function initCommand(): Command {
       const cwd = process.cwd()
       log.title('claude-forge init')
 
-      // Step 1: Ensure config repo exists
-      let globalConfig = await loadGlobalConfig()
-      if (!globalConfig) {
-        log.warn('No config repo configured. Let\'s set that up first.\n')
-        await runLogin()
-        globalConfig = await loadGlobalConfig()
-        log.blank()
-      }
-
-      if (!globalConfig) {
-        log.error('Config repo setup failed.')
-        process.exit(1)
-      }
-
-      // Step 2: Check if project already has local configs
+      // Step 1: Check if project already has local configs
       const localManifest = await loadProjectManifest(cwd)
       if (localManifest && !options.new) {
+        const globalConfig = await ensureConfigRepo()
         const handled = await handleExistingProject(cwd, localManifest, globalConfig)
         if (handled) return
+        // User chose "reconfigure from scratch" — continue to wizard
       }
 
-      // Step 3: Check if repo has existing configs to pull
+      // Step 2: First question — do you have existing configs in a git repo?
       if (!options.new) {
-        const pulled = await tryPullFromRepo(cwd, globalConfig)
-        if (pulled) return
+        const hasConfigs = await confirm({
+          message: 'Do you already have configurations saved in a private git repo?',
+          default: false,
+        })
+        log.blank()
+
+        if (hasConfigs) {
+          // Always run login so user can confirm/change the repo
+          await runLogin()
+          const globalConfig = await loadGlobalConfig()
+          if (!globalConfig) {
+            log.error('Config repo setup failed.')
+            process.exit(1)
+          }
+          log.blank()
+          const pulled = await tryPullFromRepo(cwd, globalConfig)
+          if (pulled) return
+
+          log.warn('No configs found in your config repo.')
+          log.dim('  Starting fresh setup instead...')
+          log.blank()
+        }
       }
 
-      // Step 4: Full setup wizard (first time or user chose to create new)
+      // Step 3: Ensure config repo exists (for pushing later)
+      await ensureConfigRepo()
+
+      // Step 4: Full setup wizard
       await runFullSetup(cwd)
     })
+}
+
+async function ensureConfigRepo(): Promise<{ repoOwner: string; repoName: string }> {
+  let config = await loadGlobalConfig()
+  if (config) return config
+
+  log.warn('No config repo configured. Let\'s set that up first.\n')
+  await runLogin()
+  config = await loadGlobalConfig()
+  log.blank()
+
+  if (!config) {
+    log.error('Config repo setup failed.')
+    process.exit(1)
+  }
+
+  return config
 }
 
 async function handleExistingProject(
