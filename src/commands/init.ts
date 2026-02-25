@@ -5,7 +5,7 @@ import { getPresetByName } from '../presets/index.js'
 import { generateClaudeMd } from '../generators/claude-md.js'
 import { generateSettings } from '../generators/settings.js'
 import { generateHooks } from '../generators/hooks.js'
-import { generateSettingsLocal, generateEnvExample, addToShellProfile } from '../generators/env-file.js'
+import { addToShellProfile } from '../generators/env-file.js'
 import { writeTextFile, writeJsonFile } from '../utils/fs.js'
 import { saveCredentials } from '../core/credential-store.js'
 import { askInitPrompts } from '../prompts/init-prompts.js'
@@ -67,14 +67,6 @@ export function initCommand(): Command {
 
       await generateHooks(cwd, answers.enabledHooks)
 
-      // MCP tokens → .claude/settings.local.json
-      if (answers.enabledMcps.length > 0) {
-        await generateSettingsLocal(cwd, answers.enabledMcps, answers.collectedTokens)
-      }
-
-      // .env.example for documentation
-      await generateEnvExample(cwd, answers.enabledMcps)
-
       // ANTHROPIC_API_KEY → ~/.zshrc
       if (answers.addApiKeyToZshrc && answers.collectedTokens['ANTHROPIC_API_KEY']) {
         await addToShellProfile('ANTHROPIC_API_KEY', answers.collectedTokens['ANTHROPIC_API_KEY'])
@@ -107,7 +99,6 @@ export function initCommand(): Command {
         managedFiles: [
           'CLAUDE.md',
           '.claude/settings.json',
-          '.env.example',
           ...answers.enabledHooks.map((h: string) => `.claude/hooks/${h}.sh`),
         ],
       }

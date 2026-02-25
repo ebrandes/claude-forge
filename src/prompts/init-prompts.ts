@@ -2,7 +2,7 @@ import { input, select, checkbox, confirm, number, password } from '@inquirer/pr
 import type { DetectedStack } from '../utils/detect-stack.js'
 import { listPresets } from '../presets/index.js'
 import { getAllHookTemplates } from '../hooks-library/index.js'
-import { getAllMcpDefinitions, getMcpDefinition } from '../mcps/index.js'
+import { getAllMcpDefinitions } from '../mcps/index.js'
 import { getPresetByName } from '../presets/index.js'
 import { getSavedToken } from '../core/credential-store.js'
 import { log } from '../utils/logger.js'
@@ -184,33 +184,6 @@ export async function askInitPrompts(
       checked: presetMcpNames.includes(m.name),
     })),
   })
-
-  // ─── MCP Token Collection ───
-  log.blank()
-  log.title('MCP Token Setup')
-  for (const mcpName of enabledMcps) {
-    const def = getMcpDefinition(mcpName)
-    if (!def?.requiresAuth || !def.authEnvVar) continue
-
-    if (process.env[def.authEnvVar]) {
-      log.success(`${def.displayName}: ${def.authEnvVar} already configured`)
-      continue
-    }
-
-    const saved = await getSavedToken(def.authEnvVar)
-    if (saved) {
-      log.success(`${def.displayName}: reusing saved token`)
-      collectedTokens[def.authEnvVar] = saved
-      continue
-    }
-
-    log.warn(`${def.displayName} requires a token.`)
-    if (def.setupUrl) log.dim(`  Get one at: ${def.setupUrl}`)
-    const token = await password({ message: `Paste ${def.authEnvVar} (or Enter to skip):`, mask: '*' })
-    if (token) {
-      collectedTokens[def.authEnvVar] = token
-    }
-  }
 
   const idealMin = Math.round(maxLinesPerFile * 0.25)
   const idealMax = Math.round(maxLinesPerFile * 0.625)
