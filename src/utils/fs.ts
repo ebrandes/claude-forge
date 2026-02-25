@@ -50,6 +50,27 @@ export async function listFiles(dirPath: string): Promise<string[]> {
   }
 }
 
+export async function listFilesRecursive(dirPath: string): Promise<string[]> {
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true })
+    const results: string[] = []
+
+    for (const entry of entries) {
+      const fullPath = join(dirPath, entry.name)
+      if (entry.isDirectory()) {
+        const nested = await listFilesRecursive(fullPath)
+        results.push(...nested)
+      } else {
+        results.push(fullPath)
+      }
+    }
+
+    return results
+  } catch {
+    return []
+  }
+}
+
 export function getForgeDir(): string {
   return join(homedir(), '.claude-forge')
 }

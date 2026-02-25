@@ -1,10 +1,10 @@
 import { Command } from 'commander'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 import { cp } from 'node:fs/promises'
 import { log } from '../utils/logger.js'
-import { loadProjectManifest, ensureLoggedIn, loadGlobalConfig } from '../core/config.js'
+import { loadProjectManifest, ensureLoggedIn, saveProjectManifest } from '../core/config.js'
 import { GitHubSync } from '../core/github-sync.js'
-import { fileExists, ensureDir, writeJsonFile } from '../utils/fs.js'
+import { fileExists, ensureDir, writeJsonFile, listFilesRecursive } from '../utils/fs.js'
 
 export function pushCommand(): Command {
   return new Command('push')
@@ -20,6 +20,17 @@ export function pushCommand(): Command {
       if (!manifest) {
         log.error('No .claude-forge.json found. Run "claude-forge init" first.')
         process.exit(1)
+      }
+
+      // Auto-discover all files inside .claude/ not yet in managedFiles
+      const discovered = await discoverUnmanagedFiles(cwd, manifest.managedFiles)
+      if (discovered.length > 0) {
+        manifest.managedFiles.push(...discovered)
+        manifest.hooks = syncHookIds(manifest.managedFiles)
+        await saveProjectManifest(cwd, manifest)
+        for (const file of discovered) {
+          log.file('Discovered', file)
+        }
       }
 
       const sync = new GitHubSync()
@@ -55,4 +66,32 @@ export function pushCommand(): Command {
       log.success(`Pushed ${manifest.managedFiles.length} files to "${globalConfig.repoOwner}/${globalConfig.repoName}"`)
       log.dim('  Run "claude-forge pull" in any project to use these configs.')
     })
+}
+
+async function discoverUnmanagedFiles(
+  projectDir: string,
+  managedFiles: string[],
+): Promise<string[]> {
+  const claudeDir = join(projectDir, '.claude')
+  const allFiles = await listFilesRecursive(claudeDir)
+
+  const newFiles: string[] = []
+  for (const absolutePath of allFiles) {
+    const relativePath = `.claude/${relative(claudeDir, absolutePath)}`
+
+    // Skip settings.local.json — it's project-specific
+    if (relativePath === '.claude/settings.local.json') continue
+
+    if (!managedFiles.includes(relativePath)) {
+      newFiles.push(relativePath)
+    }
+  }
+
+  return newFiles
+}
+
+function syncHookIds(managedFiles: string[]): string[] {
+  return managedFiles
+    .filter(f => f.startsWith('.claude/hooks/') && f.endsWith('.sh'))
+    .map(f => f.replace('.claude/hooks/', '').replace('.sh', ''))
 }

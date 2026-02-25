@@ -5,7 +5,8 @@ import { confirm } from '@inquirer/prompts'
 import { log } from '../utils/logger.js'
 import { loadProjectManifest, ensureLoggedIn, saveProjectManifest } from '../core/config.js'
 import { GitHubSync } from '../core/github-sync.js'
-import { fileExists, readTextFile, ensureDir } from '../utils/fs.js'
+import { fileExists, readTextFile, readJsonFile, ensureDir } from '../utils/fs.js'
+import type { ForgeProjectManifest } from '../types/index.js'
 
 export function pullCommand(): Command {
   return new Command('pull')
@@ -34,11 +35,17 @@ export function pullCommand(): Command {
         process.exit(1)
       }
 
+      // Use remote manifest's file list — it has the complete set
+      const remoteManifest = await readJsonFile<ForgeProjectManifest>(
+        join(repoDir, 'manifest.json'),
+      )
+      const filesToPull = remoteManifest?.managedFiles ?? manifest.managedFiles
+
       log.info(`Config repo: ${globalConfig.repoOwner}/${globalConfig.repoName}`)
       log.step('Pulling configs')
       let updated = 0
 
-      for (const file of manifest.managedFiles) {
+      for (const file of filesToPull) {
         const remotePath = join(repoDir, file)
         const localPath = join(cwd, file)
 
@@ -73,8 +80,12 @@ export function pullCommand(): Command {
         updated++
       }
 
+      // Merge remote managedFiles into local manifest
+      const mergedFiles = [...new Set([...manifest.managedFiles, ...filesToPull])]
+
       await saveProjectManifest(cwd, {
         ...manifest,
+        managedFiles: mergedFiles,
         lastSynced: new Date().toISOString(),
       })
 
