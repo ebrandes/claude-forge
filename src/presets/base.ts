@@ -10,6 +10,7 @@ export function getBaseSections(): SectionConfig[] {
     { sectionId: 'components-functions', enabled: true },
     { sectionId: 'naming-conventions', enabled: true },
     { sectionId: 'bug-prevention', enabled: true },
+    { sectionId: 'testing', enabled: true },
     { sectionId: 'error-handling', enabled: true },
     { sectionId: 'code-style', enabled: true },
     { sectionId: 'accessibility', enabled: true },

@@ -14,6 +14,7 @@ import { aiInteractionSection } from './ai-interaction.js'
 import { avoidListSection } from './avoid-list.js'
 import { bugPreventionSection } from './bug-prevention.js'
 import { implementationProtocolSection } from './implementation-protocol.js'
+import { testingSection } from './testing.js'
 
 const sections: Section[] = [
   corePrinciplesSection,
@@ -25,6 +26,7 @@ const sections: Section[] = [
   componentsFunctionsSection,
   namingConventionsSection,
   bugPreventionSection,
+  testingSection,
   errorHandlingSection,
   codeStyleSection,
   accessibilitySection,
