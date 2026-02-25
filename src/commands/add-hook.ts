@@ -6,14 +6,16 @@ import { generateHookFromDescription, saveGeneratedHook } from '../generators/ai
 export function addHookCommand(): Command {
   return new Command('hook')
     .description('Generate a Claude Code hook using AI')
+    .argument('[description...]', 'Description of the hook to generate')
     .option('-d, --description <text>', 'Description of the hook to generate')
-    .action(async (options) => {
+    .action(async (args: string[], options) => {
       const cwd = process.cwd()
       log.title('claude-forge add hook')
       log.dim('AI-assisted hook generation')
       log.blank()
 
-      const description = options.description ?? await askForDescription('hook')
+      const inlineDescription = args.length > 0 ? args.join(' ') : null
+      const description = inlineDescription ?? options.description ?? await askForDescription('hook')
 
       log.step('Generating hook with AI...')
       let hook

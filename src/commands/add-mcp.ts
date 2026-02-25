@@ -7,14 +7,16 @@ import type { McpDefinition } from '../types/index.js'
 export function addMcpCommand(): Command {
   return new Command('mcp')
     .description('Add an MCP server using AI')
+    .argument('[description...]', 'Description of the MCP integration')
     .option('-d, --description <text>', 'Description of the MCP integration')
-    .action(async (options) => {
+    .action(async (args: string[], options) => {
       const cwd = process.cwd()
       log.title('claude-forge add mcp')
       log.dim('AI-assisted MCP server configuration')
       log.blank()
 
-      const description = options.description ?? await askForDescription('MCP server integration')
+      const inlineDescription = args.length > 0 ? args.join(' ') : null
+      const description = inlineDescription ?? options.description ?? await askForDescription('MCP server integration')
 
       log.step('Generating MCP configuration with AI...')
       let mcp: McpDefinition

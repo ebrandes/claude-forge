@@ -6,14 +6,16 @@ import { generateSkillFromDescription, saveGeneratedSkill } from '../generators/
 export function addSkillCommand(): Command {
   return new Command('skill')
     .description('Generate a Claude Code skill (slash command) using AI')
+    .argument('[description...]', 'Description of the skill to generate')
     .option('-d, --description <text>', 'Description of the skill to generate')
-    .action(async (options) => {
+    .action(async (args: string[], options) => {
       const cwd = process.cwd()
       log.title('claude-forge add skill')
       log.dim('AI-assisted skill generation')
       log.blank()
 
-      const description = options.description ?? await askForDescription('skill (slash command)')
+      const inlineDescription = args.length > 0 ? args.join(' ') : null
+      const description = inlineDescription ?? options.description ?? await askForDescription('skill (slash command)')
 
       log.step('Generating skill with AI...')
       let skill
