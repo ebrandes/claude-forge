@@ -2,5 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .claude-forge.json
-.env.local
+.env
+.env.*
+!.env.example
 .claude/settings.local.json
