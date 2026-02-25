@@ -15,7 +15,7 @@ export function generateClaudeMd(
     .map(s => renderSection(s, params))
     .filter((s): s is string => s !== null)
 
-  const parts = [HEADER, '---', ...renderedSections.join('\n\n---\n\n')]
+  const parts = [HEADER, '---', renderedSections.join('\n\n---\n\n')]
 
   return parts.join('\n\n') + '\n'
 }
