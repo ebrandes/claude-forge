@@ -41,16 +41,55 @@ export function extractUnmanagedContent(markdown: string): string[] {
   return parts.map((p) => p.trim()).filter((p) => p.length > 0)
 }
 
-export function mergeWithExisting(newContent: string, existingContent: string): string {
-  const existingUnmanaged = extractUnmanagedContent(existingContent)
+export function hasForgeMarkers(content: string): boolean {
+  return content.includes('<!-- forge:start:')
+}
 
-  if (existingUnmanaged.length === 0) return newContent
+export function smartMergeMarkdown(remoteContent: string, localContent: string): string {
+  const remoteSections = extractManagedSections(remoteContent)
+  const localSections = extractManagedSections(localContent)
 
-  const unmanagedBlock = existingUnmanaged
-    .filter((block) => !block.startsWith('# ') && block !== '---')
-    .join('\n\n')
+  // If local has no markers, treat entire local content as custom
+  if (localSections.size === 0) {
+    const trimmed = localContent.trim()
+    if (!trimmed) return remoteContent
+    return `${remoteContent}\n\n<!-- User custom content (preserved by forge) -->\n${trimmed}`
+  }
 
-  if (!unmanagedBlock) return newContent
+  const placedRemoteSections = new Set<string>()
+  const forgeBlockRegex = /<!-- forge:start:(\S+) -->\n[\s\S]*?\n<!-- forge:end:\1 -->/g
 
-  return `${newContent}\n\n<!-- User custom content (preserved by forge) -->\n${unmanagedBlock}`
+  let result = ''
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = forgeBlockRegex.exec(localContent)) !== null) {
+    const sectionId = match[1]
+
+    // Keep unmanaged content before this block
+    result += localContent.slice(lastIndex, match.index)
+
+    const remoteVersion = remoteSections.get(sectionId)
+    if (remoteVersion === undefined) {
+      // Local-only section: preserve as-is
+      result += match[0]
+    } else {
+      result += wrapWithMarkers(sectionId, remoteVersion)
+      placedRemoteSections.add(sectionId)
+    }
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // Append remaining content after the last block
+  result += localContent.slice(lastIndex)
+
+  // Append new remote sections that don't exist in local
+  for (const [sectionId, content] of remoteSections) {
+    if (!localSections.has(sectionId) && !placedRemoteSections.has(sectionId)) {
+      result += `\n\n---\n\n${wrapWithMarkers(sectionId, content)}`
+    }
+  }
+
+  return result
 }

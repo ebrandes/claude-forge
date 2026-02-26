@@ -3,7 +3,8 @@ import {
   wrapWithMarkers,
   extractManagedSections,
   extractUnmanagedContent,
-  mergeWithExisting,
+  hasForgeMarkers,
+  smartMergeMarkdown,
 } from './template-engine.js'
 
 import type { SectionConfig, SectionParams } from '../types/index.js'
@@ -105,49 +106,134 @@ describe('extractUnmanagedContent', () => {
   })
 })
 
-describe('mergeWithExisting', () => {
-  it('returns new content when existing has no unmanaged content', () => {
-    const newContent = 'New stuff'
-    const existing = [
-      '<!-- forge:start:section -->',
-      'Old stuff',
-      '<!-- forge:end:section -->',
-    ].join('\n')
-
-    const result = mergeWithExisting(newContent, existing)
-
-    expect(result).toBe('New stuff')
+describe('hasForgeMarkers', () => {
+  it('returns true when content has forge markers', () => {
+    const content = '# Header\n<!-- forge:start:test -->\nContent\n<!-- forge:end:test -->'
+    expect(hasForgeMarkers(content)).toBe(true)
   })
 
-  it('preserves custom content from existing file', () => {
-    const newContent = 'New managed content'
-    const existing = [
-      '<!-- forge:start:section -->',
-      'Old managed',
-      '<!-- forge:end:section -->',
-      'My custom notes that should be preserved',
+  it('returns false for plain markdown', () => {
+    expect(hasForgeMarkers('# Just a header\nSome content')).toBe(false)
+  })
+})
+
+describe('smartMergeMarkdown', () => {
+  it('updates managed sections from remote', () => {
+    const remote = '<!-- forge:start:a -->\nNew A\n<!-- forge:end:a -->'
+    const local = '<!-- forge:start:a -->\nOld A\n<!-- forge:end:a -->'
+
+    const result = smartMergeMarkdown(remote, local)
+
+    expect(result).toContain('New A')
+    expect(result).not.toContain('Old A')
+  })
+
+  it('preserves unmanaged content from local', () => {
+    const remote = '<!-- forge:start:a -->\nNew A\n<!-- forge:end:a -->'
+    const local = [
+      'My custom header',
+      '<!-- forge:start:a -->',
+      'Old A',
+      '<!-- forge:end:a -->',
+      'My custom footer',
     ].join('\n')
 
-    const result = mergeWithExisting(newContent, existing)
+    const result = smartMergeMarkdown(remote, local)
 
-    expect(result).toContain('New managed content')
-    expect(result).toContain('My custom notes that should be preserved')
+    expect(result).toContain('My custom header')
+    expect(result).toContain('My custom footer')
+    expect(result).toContain('New A')
+  })
+
+  it('preserves local-only managed sections', () => {
+    const remote = '<!-- forge:start:a -->\nRemote A\n<!-- forge:end:a -->'
+    const local = [
+      '<!-- forge:start:a -->',
+      'Old A',
+      '<!-- forge:end:a -->',
+      '\n',
+      '<!-- forge:start:local-only -->',
+      'My local section',
+      '<!-- forge:end:local-only -->',
+    ].join('\n')
+
+    const result = smartMergeMarkdown(remote, local)
+
+    expect(result).toContain('Remote A')
+    expect(result).toContain('My local section')
+    expect(result).toContain('forge:start:local-only')
+  })
+
+  it('adds new remote sections not in local', () => {
+    const remote = [
+      '<!-- forge:start:a -->',
+      'A content',
+      '<!-- forge:end:a -->',
+      '\n',
+      '<!-- forge:start:new-section -->',
+      'Brand new',
+      '<!-- forge:end:new-section -->',
+    ].join('\n')
+    const local = '<!-- forge:start:a -->\nOld A\n<!-- forge:end:a -->'
+
+    const result = smartMergeMarkdown(remote, local)
+
+    expect(result).toContain('A content')
+    expect(result).toContain('Brand new')
+    expect(result).toContain('forge:start:new-section')
+  })
+
+  it('handles local file with no markers (all content is custom)', () => {
+    const remote = '<!-- forge:start:a -->\nManaged\n<!-- forge:end:a -->'
+    const local = '# My Manual CLAUDE.md\n\nCustom rules here'
+
+    const result = smartMergeMarkdown(remote, local)
+
+    expect(result).toContain('Managed')
+    expect(result).toContain('# My Manual CLAUDE.md')
+    expect(result).toContain('Custom rules here')
     expect(result).toContain('<!-- User custom content (preserved by forge) -->')
   })
 
-  it('filters out header-only unmanaged content', () => {
-    const newContent = 'New content'
-    const existing = [
-      '# Header Only',
-      '---',
-      '<!-- forge:start:section -->',
-      'Managed',
-      '<!-- forge:end:section -->',
+  it('preserves section order from local file', () => {
+    const remote = [
+      '<!-- forge:start:b -->',
+      'New B',
+      '<!-- forge:end:b -->',
+      '\n',
+      '<!-- forge:start:a -->',
+      'New A',
+      '<!-- forge:end:a -->',
+    ].join('\n')
+    const local = [
+      '<!-- forge:start:a -->',
+      'Old A',
+      '<!-- forge:end:a -->',
+      '\n---\n',
+      '<!-- forge:start:b -->',
+      'Old B',
+      '<!-- forge:end:b -->',
     ].join('\n')
 
-    const result = mergeWithExisting(newContent, existing)
+    const result = smartMergeMarkdown(remote, local)
 
-    expect(result).toBe('New content')
+    const indexA = result.indexOf('forge:start:a')
+    const indexB = result.indexOf('forge:start:b')
+    expect(indexA).toBeLessThan(indexB)
+  })
+
+  it('returns identical content when remote sections match local', () => {
+    const content = [
+      '# Header',
+      '<!-- forge:start:a -->',
+      'Same content',
+      '<!-- forge:end:a -->',
+      'Footer',
+    ].join('\n')
+
+    const result = smartMergeMarkdown(content, content)
+
+    expect(result).toBe(content)
   })
 })
 

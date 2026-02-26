@@ -1,4 +1,3 @@
-import { cp } from 'node:fs/promises'
 import path from 'node:path'
 
 import { confirm } from '@inquirer/prompts'
@@ -6,7 +5,9 @@ import { Command } from 'commander'
 
 import { loadProjectManifest, ensureLoggedIn, saveProjectManifest } from '../core/config.js'
 import { GitHubSync } from '../core/github-sync.js'
-import { fileExists, readTextFile, readJsonFile, ensureDir } from '../utils/fs.js'
+import { smartPullFile } from '../core/smart-pull.js'
+import { hasForgeMarkers } from '../core/template-engine.js'
+import { fileExists, readTextFile, readJsonFile } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 
 import type { ForgeProjectManifest } from '../types/index.js'
@@ -57,6 +58,7 @@ export function pullCommand(): Command {
           continue
         }
 
+        // Check if files differ before prompting
         const localExists = await fileExists(localPath)
         if (localExists && !options.force) {
           const localContent = await readTextFile(localPath)
@@ -67,20 +69,28 @@ export function pullCommand(): Command {
             continue
           }
 
-          const overwrite = await confirm({
-            message: `Overwrite ${file}?`,
-            default: true,
-          })
-          if (!overwrite) {
+          const isMergeable = remoteContent !== null && hasForgeMarkers(remoteContent)
+          const message = isMergeable
+            ? `Merge ${file}? (remote sections updated, your customizations preserved)`
+            : `Overwrite ${file}?`
+
+          const proceed = await confirm({ message, default: true })
+          if (!proceed) {
             log.dim(`  Skipped: ${file}`)
             continue
           }
         }
 
-        await ensureDir(path.join(localPath, '..'))
-        await cp(remotePath, localPath, { recursive: true })
-        log.file('Updated', file)
-        updated++
+        const result = await smartPullFile(remotePath, localPath)
+
+        if (result === 'unchanged') {
+          log.dim(`  Unchanged: ${file}`)
+        } else if (result === 'skipped') {
+          log.dim(`  Skip (not in repo): ${file}`)
+        } else {
+          log.file(result === 'merged' ? 'Merged' : 'Updated', file)
+          updated++
+        }
       }
 
       // Merge remote managedFiles into local manifest

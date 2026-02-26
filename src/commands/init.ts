@@ -7,6 +7,7 @@ import { Command } from 'commander'
 import { loadGlobalConfig, loadProjectManifest, saveProjectManifest } from '../core/config.js'
 import { saveCredentials } from '../core/credential-store.js'
 import { GitHubSync } from '../core/github-sync.js'
+import { smartPullFile } from '../core/smart-pull.js'
 import { generateClaudeMd } from '../generators/claude-md.js'
 import { addToShellProfile } from '../generators/env-file.js'
 import { generateHooks } from '../generators/hooks.js'
@@ -160,12 +161,15 @@ async function tryPullFromRepo(
     const remotePath = path.join(repoDir, file)
     const localPath = path.join(cwd, file)
 
-    if (!(await fileExists(remotePath))) continue
+    const result = await smartPullFile(remotePath, localPath)
 
-    await ensureDir(path.join(localPath, '..'))
-    await cp(remotePath, localPath, { recursive: true })
-    log.file('Pulled', file)
-    updated++
+    if (result === 'merged') {
+      log.file('Merged', file)
+      updated++
+    } else if (result === 'copied') {
+      log.file('Pulled', file)
+      updated++
+    }
   }
 
   await saveProjectManifest(cwd, {
@@ -248,12 +252,15 @@ async function pullFromRepo(
     const remotePath = path.join(repoDir, file)
     const localPath = path.join(cwd, file)
 
-    if (!(await fileExists(remotePath))) continue
+    const result = await smartPullFile(remotePath, localPath)
 
-    await ensureDir(path.join(localPath, '..'))
-    await cp(remotePath, localPath, { recursive: true })
-    log.file('Updated', file)
-    updated++
+    if (result === 'merged') {
+      log.file('Merged', file)
+      updated++
+    } else if (result === 'copied') {
+      log.file('Updated', file)
+      updated++
+    }
   }
 
   await saveProjectManifest(cwd, {
