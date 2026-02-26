@@ -62,8 +62,8 @@ export const responsiveDesignSection: Section = {
 }
 
 function renderContextAware(mobileRoutes: string[], desktopRoutes: string[]): string {
-  const mobileList = mobileRoutes.map(r => `\`${r}\``).join(', ')
-  const desktopList = desktopRoutes.map(r => `\`${r}\``).join(', ')
+  const mobileList = mobileRoutes.map((r) => `\`${r}\``).join(', ')
+  const desktopList = desktopRoutes.map((r) => `\`${r}\``).join(', ')
 
   return `## 📱 Responsive Design Rules
 

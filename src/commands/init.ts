@@ -1,20 +1,24 @@
-import { Command } from 'commander'
-import { join } from 'node:path'
 import { cp } from 'node:fs/promises'
+import path from 'node:path'
+
 import { select, confirm } from '@inquirer/prompts'
-import { log } from '../utils/logger.js'
-import { detectStack } from '../utils/detect-stack.js'
-import { getPresetByName } from '../presets/index.js'
-import { generateClaudeMd } from '../generators/claude-md.js'
-import { generateSettings } from '../generators/settings.js'
-import { generateHooks } from '../generators/hooks.js'
-import { addToShellProfile } from '../generators/env-file.js'
-import { writeTextFile, writeJsonFile, fileExists, ensureDir, readJsonFile } from '../utils/fs.js'
-import { saveCredentials } from '../core/credential-store.js'
+import { Command } from 'commander'
+
 import { loadGlobalConfig, loadProjectManifest, saveProjectManifest } from '../core/config.js'
-import { runLogin } from './login.js'
+import { saveCredentials } from '../core/credential-store.js'
 import { GitHubSync } from '../core/github-sync.js'
+import { generateClaudeMd } from '../generators/claude-md.js'
+import { addToShellProfile } from '../generators/env-file.js'
+import { generateHooks } from '../generators/hooks.js'
+import { generateSettings } from '../generators/settings.js'
+import { getPresetByName } from '../presets/index.js'
 import { askInitPrompts } from '../prompts/init-prompts.js'
+import { detectStack } from '../utils/detect-stack.js'
+import { writeTextFile, writeJsonFile, fileExists, ensureDir, readJsonFile } from '../utils/fs.js'
+import { log } from '../utils/logger.js'
+
+import { runLogin } from './login.js'
+
 import type { ForgeProjectManifest } from '../types/index.js'
 
 export function initCommand(): Command {
@@ -22,7 +26,7 @@ export function initCommand(): Command {
     .description('Initialize Claude Code configuration for the current project')
     .option('--preset <name>', 'Use a specific preset directly')
     .option('--new', 'Skip pulling existing configs and create fresh')
-    .action(async (options) => {
+    .action(async (options: { preset?: string; new?: boolean }) => {
       const cwd = process.cwd()
       log.title('claude-forge init')
 
@@ -73,7 +77,7 @@ async function ensureConfigRepo(): Promise<{ repoOwner: string; repoName: string
   let config = await loadGlobalConfig()
   if (config) return config
 
-  log.warn('No config repo configured. Let\'s set that up first.\n')
+  log.warn("No config repo configured. Let's set that up first.\n")
   await runLogin()
   config = await loadGlobalConfig()
   log.blank()
@@ -125,14 +129,16 @@ async function tryPullFromRepo(
   }
 
   const repoDir = sync.getRepoDir()
-  const manifestPath = join(repoDir, 'manifest.json')
+  const manifestPath = path.join(repoDir, 'manifest.json')
   const remoteManifest = await readJsonFile<ForgeProjectManifest>(manifestPath)
 
   if (!remoteManifest) return false
 
   log.success(`Found existing configs in ${globalConfig.repoOwner}/${globalConfig.repoName}`)
-  const managedFiles = remoteManifest.managedFiles ?? []
-  log.dim(`  Files: ${managedFiles.slice(0, 4).join(', ')}${managedFiles.length > 4 ? ` (+${managedFiles.length - 4} more)` : ''}`)
+  const managedFiles = remoteManifest.managedFiles
+  log.dim(
+    `  Files: ${managedFiles.slice(0, 4).join(', ')}${managedFiles.length > 4 ? ` (+${managedFiles.length - 4} more)` : ''}`,
+  )
   log.dim(`  Preset: ${remoteManifest.preset}`)
   log.blank()
 
@@ -151,12 +157,12 @@ async function tryPullFromRepo(
   let updated = 0
 
   for (const file of managedFiles) {
-    const remotePath = join(repoDir, file)
-    const localPath = join(cwd, file)
+    const remotePath = path.join(repoDir, file)
+    const localPath = path.join(cwd, file)
 
-    if (!await fileExists(remotePath)) continue
+    if (!(await fileExists(remotePath))) continue
 
-    await ensureDir(join(localPath, '..'))
+    await ensureDir(path.join(localPath, '..'))
     await cp(remotePath, localPath, { recursive: true })
     log.file('Pulled', file)
     updated++
@@ -190,22 +196,24 @@ async function pushToRepo(
   log.step('Pushing configs')
 
   for (const file of manifest.managedFiles) {
-    const sourcePath = join(cwd, file)
-    if (!await fileExists(sourcePath)) continue
+    const sourcePath = path.join(cwd, file)
+    if (!(await fileExists(sourcePath))) continue
 
-    const destPath = join(repoDir, file)
-    await ensureDir(join(destPath, '..'))
+    const destPath = path.join(repoDir, file)
+    await ensureDir(path.join(destPath, '..'))
     await cp(sourcePath, destPath, { recursive: true })
     log.file('Synced', file)
   }
 
-  const manifestDest = join(repoDir, 'manifest.json')
+  const manifestDest = path.join(repoDir, 'manifest.json')
   await writeJsonFile(manifestDest, { ...manifest, lastSynced: new Date().toISOString() })
 
   await sync.commitAndPush(`sync: update configs (${new Date().toISOString().split('T')[0]})`)
 
   log.blank()
-  log.success(`Pushed ${manifest.managedFiles.length} files to "${globalConfig.repoOwner}/${globalConfig.repoName}"`)
+  log.success(
+    `Pushed ${manifest.managedFiles.length} files to "${globalConfig.repoOwner}/${globalConfig.repoName}"`,
+  )
   log.dim('  Run "claude-forge pull" in any project to use these configs.')
   return true
 }
@@ -224,7 +232,7 @@ async function pullFromRepo(
   }
 
   const repoDir = sync.getRepoDir()
-  const manifestPath = join(repoDir, 'manifest.json')
+  const manifestPath = path.join(repoDir, 'manifest.json')
   const remoteManifest = await readJsonFile<ForgeProjectManifest>(manifestPath)
 
   if (!remoteManifest) {
@@ -232,17 +240,17 @@ async function pullFromRepo(
     return false
   }
 
-  const filesToPull = remoteManifest.managedFiles ?? localManagedFiles
+  const filesToPull = remoteManifest.managedFiles
   log.step('Pulling configs')
   let updated = 0
 
   for (const file of filesToPull) {
-    const remotePath = join(repoDir, file)
-    const localPath = join(cwd, file)
+    const remotePath = path.join(repoDir, file)
+    const localPath = path.join(cwd, file)
 
-    if (!await fileExists(remotePath)) continue
+    if (!(await fileExists(remotePath))) continue
 
-    await ensureDir(join(localPath, '..'))
+    await ensureDir(path.join(localPath, '..'))
     await cp(remotePath, localPath, { recursive: true })
     log.file('Updated', file)
     updated++
@@ -261,7 +269,7 @@ async function pullFromRepo(
 async function runFullSetup(cwd: string): Promise<void> {
   const detected = await detectStack(cwd)
   if (detected.framework) {
-    log.info(`Detected: ${detected.framework} (${detected.language})`)
+    log.info(`Detected: ${detected.framework} (${detected.language ?? 'unknown'})`)
     if (detected.presetSuggestion) {
       log.dim(`  Suggested preset: ${detected.presetSuggestion}`)
     }
@@ -280,7 +288,7 @@ async function runFullSetup(cwd: string): Promise<void> {
 
   const sectionParams = {
     maxLinesPerFile: answers.maxLinesPerFile,
-    idealLineRange: answers.idealLineRange as [number, number],
+    idealLineRange: answers.idealLineRange,
     qualityLevel: answers.qualityLevel,
     responsiveMode: answers.responsiveMode,
     mobileFirstRoutes: answers.mobileFirstRoutes,
@@ -296,17 +304,17 @@ async function runFullSetup(cwd: string): Promise<void> {
   log.title('Generating files')
 
   const claudeMd = generateClaudeMd(activeSections, sectionParams)
-  await writeTextFile(join(cwd, 'CLAUDE.md'), claudeMd)
+  await writeTextFile(path.join(cwd, 'CLAUDE.md'), claudeMd)
   log.file('Created', 'CLAUDE.md')
 
   const settings = generateSettings(preset, answers.enabledHooks)
-  await writeJsonFile(join(cwd, '.claude', 'settings.json'), settings)
+  await writeJsonFile(path.join(cwd, '.claude', 'settings.json'), settings)
   log.file('Created', '.claude/settings.json (hooks + permissions)')
 
   await generateHooks(cwd, answers.enabledHooks)
 
-  if (answers.addApiKeyToZshrc && answers.collectedTokens['ANTHROPIC_API_KEY']) {
-    await addToShellProfile('ANTHROPIC_API_KEY', answers.collectedTokens['ANTHROPIC_API_KEY'])
+  if (answers.addApiKeyToZshrc && answers.collectedTokens.ANTHROPIC_API_KEY) {
+    await addToShellProfile('ANTHROPIC_API_KEY', answers.collectedTokens.ANTHROPIC_API_KEY)
   }
 
   if (Object.keys(answers.collectedTokens).length > 0) {
@@ -321,7 +329,7 @@ async function runFullSetup(cwd: string): Promise<void> {
     lastSynced: new Date().toISOString(),
     config: {
       maxLinesPerFile: answers.maxLinesPerFile,
-      idealLineRange: answers.idealLineRange as [number, number],
+      idealLineRange: answers.idealLineRange,
       qualityLevel: answers.qualityLevel,
       responsiveMode: answers.responsiveMode,
       mobileFirstRoutes: answers.mobileFirstRoutes,
@@ -339,7 +347,7 @@ async function runFullSetup(cwd: string): Promise<void> {
     ],
   }
 
-  await writeJsonFile(join(cwd, '.claude-forge.json'), manifest)
+  await writeJsonFile(path.join(cwd, '.claude-forge.json'), manifest)
   log.file('Created', '.claude-forge.json')
 
   log.blank()
@@ -350,8 +358,10 @@ async function runFullSetup(cwd: string): Promise<void> {
   if (answers.addApiKeyToZshrc) {
     nextSteps.push('Run: source ~/.zshrc')
   }
-  nextSteps.push('Run `claude-forge push` to sync to your config repo')
-  nextSteps.push('Run `claude` to start coding!')
+  nextSteps.push(
+    'Run `claude-forge push` to sync to your config repo',
+    'Run `claude` to start coding!',
+  )
 
   log.dim('Next steps:')
   log.list(nextSteps)

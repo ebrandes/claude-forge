@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['src/**/*.ts', 'bin/claude-forge.ts'],
+  entry: ['src/**/*.ts', '!src/**/*.test.ts', 'bin/claude-forge.ts'],
   format: ['esm'],
   target: 'node20',
   outDir: 'dist',

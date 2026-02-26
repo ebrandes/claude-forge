@@ -8,7 +8,9 @@ export const implementationProtocolSection: Section = {
   render(params) {
     const quality = params.qualityLevel ?? 'strict'
 
-    const strictBlock = quality === 'strict' ? `
+    const strictBlock =
+      quality === 'strict'
+        ? `
 
 ### Completion Criteria (MANDATORY)
 A task is ONLY considered complete when ALL of the following are true:
@@ -20,7 +22,8 @@ A task is ONLY considered complete when ALL of the following are true:
 - [ ] Visual output matches expected behavior (if UI change)
 
 **NEVER declare a task complete if any check fails.**
-If a check fails, fix the issue and verify again.` : ''
+If a check fails, fix the issue and verify again.`
+        : ''
 
     return `## 🔄 Implementation Protocol
 

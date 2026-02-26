@@ -1,7 +1,8 @@
-import { join } from 'node:path'
 import { appendFile } from 'node:fs/promises'
-import { writeTextFile, writeJsonFile, readJsonFile, fileExists } from '../utils/fs.js'
+import path from 'node:path'
+
 import { getMcpDefinition } from '../mcps/index.js'
+import { writeTextFile, writeJsonFile, readJsonFile } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 
 interface SettingsLocal {
@@ -39,8 +40,8 @@ export async function generateSettingsLocal(
 
   if (Object.keys(mcpServers).length === 0) return
 
-  const settingsLocalPath = join(projectDir, '.claude', 'settings.local.json')
-  const existing = await readJsonFile<SettingsLocal>(settingsLocalPath) ?? {}
+  const settingsLocalPath = path.join(projectDir, '.claude', 'settings.local.json')
+  const existing = (await readJsonFile<SettingsLocal>(settingsLocalPath)) ?? {}
   const merged: SettingsLocal = {
     ...existing,
     mcpServers: { ...existing.mcpServers, ...mcpServers },
@@ -50,10 +51,7 @@ export async function generateSettingsLocal(
   log.file('Created', '.claude/settings.local.json (MCP tokens)')
 }
 
-export async function generateEnvExample(
-  projectDir: string,
-  enabledMcps: string[],
-): Promise<void> {
+export async function generateEnvExample(projectDir: string, enabledMcps: string[]): Promise<void> {
   const lines: string[] = [
     '# Tokens required for this project.',
     '# Configured automatically via: claude-forge init',
@@ -68,27 +66,23 @@ export async function generateEnvExample(
     const definition = getMcpDefinition(mcpName)
     if (!definition?.requiresAuth || !definition.authEnvVar) continue
 
-    lines.push('')
-    lines.push(`# ${definition.displayName} (configured in .claude/settings.local.json)`)
+    lines.push('', `# ${definition.displayName} (configured in .claude/settings.local.json)`)
     if (definition.setupUrl) {
       lines.push(`# Get yours at: ${definition.setupUrl}`)
     }
     lines.push(`${definition.authEnvVar}=`)
   }
 
-  await writeTextFile(join(projectDir, '.env.example'), lines.join('\n') + '\n')
+  await writeTextFile(path.join(projectDir, '.env.example'), lines.join('\n') + '\n')
   log.file('Created', '.env.example (documentation)')
 }
 
-export async function addToShellProfile(
-  envVar: string,
-  value: string,
-): Promise<boolean> {
-  const zshrcPath = join(homedir(), '.zshrc')
+export async function addToShellProfile(envVar: string, value: string): Promise<boolean> {
+  const zshrcPath = path.join(homedir(), '.zshrc')
   const exportLine = `\nexport ${envVar}="${value}"\n`
 
   try {
-    await appendFile(zshrcPath, exportLine, 'utf-8')
+    await appendFile(zshrcPath, exportLine, 'utf8')
     log.success(`Added ${envVar} to ~/.zshrc`)
     log.dim('  Run: source ~/.zshrc')
     return true
@@ -100,5 +94,5 @@ export async function addToShellProfile(
 }
 
 function homedir(): string {
-  return process.env.HOME || process.env.USERPROFILE || '~'
+  return process.env.HOME ?? process.env.USERPROFILE ?? '~'
 }

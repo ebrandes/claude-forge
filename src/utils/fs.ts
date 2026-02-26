@@ -1,6 +1,6 @@
-import { readFile, writeFile, mkdir, access, readdir } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
 import { constants } from 'node:fs'
+import { readFile, writeFile, mkdir, access, readdir } from 'node:fs/promises'
+import path from 'node:path'
 
 export async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -13,7 +13,7 @@ export async function fileExists(filePath: string): Promise<boolean> {
 
 export async function readJsonFile<T>(filePath: string): Promise<T | null> {
   try {
-    const content = await readFile(filePath, 'utf-8')
+    const content = await readFile(filePath, 'utf8')
     return JSON.parse(content) as T
   } catch {
     return null
@@ -21,21 +21,21 @@ export async function readJsonFile<T>(filePath: string): Promise<T | null> {
 }
 
 export async function writeJsonFile(filePath: string, data: unknown): Promise<void> {
-  await ensureDir(dirname(filePath))
-  await writeFile(filePath, JSON.stringify(data, null, 2) + '\n', 'utf-8')
+  await ensureDir(path.dirname(filePath))
+  await writeFile(filePath, JSON.stringify(data, null, 2) + '\n', 'utf8')
 }
 
 export async function readTextFile(filePath: string): Promise<string | null> {
   try {
-    return await readFile(filePath, 'utf-8')
+    return await readFile(filePath, 'utf8')
   } catch {
     return null
   }
 }
 
 export async function writeTextFile(filePath: string, content: string): Promise<void> {
-  await ensureDir(dirname(filePath))
-  await writeFile(filePath, content, 'utf-8')
+  await ensureDir(path.dirname(filePath))
+  await writeFile(filePath, content, 'utf8')
 }
 
 export async function ensureDir(dirPath: string): Promise<void> {
@@ -56,7 +56,7 @@ export async function listFilesRecursive(dirPath: string): Promise<string[]> {
     const results: string[] = []
 
     for (const entry of entries) {
-      const fullPath = join(dirPath, entry.name)
+      const fullPath = path.join(dirPath, entry.name)
       if (entry.isDirectory()) {
         const nested = await listFilesRecursive(fullPath)
         results.push(...nested)
@@ -72,17 +72,17 @@ export async function listFilesRecursive(dirPath: string): Promise<string[]> {
 }
 
 export function getForgeDir(): string {
-  return join(homedir(), '.claude-forge')
+  return path.join(homedir(), '.claude-forge')
 }
 
 export function getForgeRepoDir(): string {
-  return join(getForgeDir(), 'repo')
+  return path.join(getForgeDir(), 'repo')
 }
 
 export function getForgeConfigPath(): string {
-  return join(getForgeDir(), 'config.json')
+  return path.join(getForgeDir(), 'config.json')
 }
 
 function homedir(): string {
-  return process.env.HOME || process.env.USERPROFILE || '~'
+  return process.env.HOME ?? process.env.USERPROFILE ?? '~'
 }

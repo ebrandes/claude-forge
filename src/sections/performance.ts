@@ -6,12 +6,12 @@ export const performanceSection: Section = {
   emoji: '⚡',
   order: 40,
   render(params) {
-    const extras = (params.extras as string[] | undefined) ?? []
+    const extras = params.extras ?? []
 
     let extrasBlock = ''
     if (extras.length > 0) {
-      extrasBlock = '\n### Project-Specific Performance Rules\n' +
-        extras.map(e => `- ${e}`).join('\n')
+      extrasBlock =
+        '\n### Project-Specific Performance Rules\n' + extras.map((e) => `- ${e}`).join('\n')
     }
 
     return `## ⚡ Performance First Rules

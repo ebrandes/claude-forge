@@ -8,14 +8,14 @@ export const checkLintHook: HookTemplate = {
   matcher: 'Edit|Write',
   timeout: 30,
   statusMessage: 'Running ESLint...',
-  script: `#!/bin/bash
+  script: String.raw`#!/bin/bash
 # PostToolUse hook: runs ESLint on the modified file
 
 INPUT=$(cat)
 FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 
 # Skip non-JS/TS files
-if [ -z "$FILE" ] || ! echo "$FILE" | grep -qE '\\.(js|jsx|ts|tsx)$'; then
+if [ -z "$FILE" ] || ! echo "$FILE" | grep -qE '\.(js|jsx|ts|tsx)$'; then
   exit 0
 fi
 

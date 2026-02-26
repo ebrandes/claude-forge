@@ -6,12 +6,12 @@ export const architectureSection: Section = {
   emoji: '🧱',
   order: 50,
   render(params) {
-    const extras = (params.extras as string[] | undefined) ?? []
+    const extras = params.extras ?? []
 
     let extrasBlock = ''
     if (extras.length > 0) {
-      extrasBlock = '\n\n### Project Directory Convention\n' +
-        extras.map(e => `- \`${e}\``).join('\n')
+      extrasBlock =
+        '\n\n### Project Directory Convention\n' + extras.map((e) => `- \`${e}\``).join('\n')
     }
 
     return `## 🧱 Architecture & Structure

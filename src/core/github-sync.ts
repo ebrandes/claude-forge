@@ -1,27 +1,15 @@
-import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { cp } from 'node:fs/promises'
-import { ensureLoggedIn } from './config.js'
-import {
-  gitClone,
-  gitPull,
-  gitAddAll,
-  gitCommit,
-  gitPush,
-  gitHasChanges,
-  exec,
-} from '../utils/git.js'
-import {
-  ensureDir,
-  readTextFile,
-  writeTextFile,
-  listFiles,
-  fileExists,
-} from '../utils/fs.js'
+import path from 'node:path'
+
+import { ensureDir, readTextFile, writeTextFile, listFiles, fileExists } from '../utils/fs.js'
+import { gitClone, gitPull, gitAddAll, gitCommit, gitPush, gitHasChanges } from '../utils/git.js'
 import { log } from '../utils/logger.js'
 
+import { ensureLoggedIn } from './config.js'
+
 export class GitHubSync {
-  private repoDir: string = ''
+  private repoDir = ''
   private initialized = false
 
   async init(): Promise<void> {
@@ -52,7 +40,7 @@ export class GitHubSync {
     await this.init()
     await gitAddAll(this.repoDir)
 
-    if (!await gitHasChanges(this.repoDir)) {
+    if (!(await gitHasChanges(this.repoDir))) {
       log.dim('No changes to push')
       return
     }
@@ -63,39 +51,39 @@ export class GitHubSync {
 
   async readFile(relativePath: string): Promise<string | null> {
     await this.init()
-    return readTextFile(join(this.repoDir, relativePath))
+    return readTextFile(path.join(this.repoDir, relativePath))
   }
 
   async writeFile(relativePath: string, content: string): Promise<void> {
     await this.init()
-    await writeTextFile(join(this.repoDir, relativePath), content)
+    await writeTextFile(path.join(this.repoDir, relativePath), content)
   }
 
   async copyToRepo(sourcePath: string, repoRelativePath: string): Promise<void> {
     await this.init()
-    const destPath = join(this.repoDir, repoRelativePath)
-    await ensureDir(join(destPath, '..'))
+    const destPath = path.join(this.repoDir, repoRelativePath)
+    await ensureDir(path.join(destPath, '..'))
     await cp(sourcePath, destPath, { recursive: true })
   }
 
   async copyFromRepo(repoRelativePath: string, destPath: string): Promise<void> {
     await this.init()
-    const sourcePath = join(this.repoDir, repoRelativePath)
-    if (!await fileExists(sourcePath)) {
+    const sourcePath = path.join(this.repoDir, repoRelativePath)
+    if (!(await fileExists(sourcePath))) {
       throw new Error(`File not found in sync repo: ${repoRelativePath}`)
     }
-    await ensureDir(join(destPath, '..'))
+    await ensureDir(path.join(destPath, '..'))
     await cp(sourcePath, destPath, { recursive: true })
   }
 
   async listDirectory(relativePath: string): Promise<string[]> {
     await this.init()
-    return listFiles(join(this.repoDir, relativePath))
+    return listFiles(path.join(this.repoDir, relativePath))
   }
 
   async fileExistsInRepo(relativePath: string): Promise<boolean> {
     await this.init()
-    return fileExists(join(this.repoDir, relativePath))
+    return fileExists(path.join(this.repoDir, relativePath))
   }
 
   getRepoDir(): string {

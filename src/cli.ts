@@ -1,13 +1,14 @@
 import { Command } from 'commander'
+
+import { addCommand } from './commands/add.js'
+import { diffCommand } from './commands/diff.js'
+import { doctorCommand } from './commands/doctor.js'
 import { initCommand } from './commands/init.js'
-import { pushCommand } from './commands/push.js'
-import { pullCommand } from './commands/pull.js'
 import { listCommand } from './commands/list.js'
 import { loginCommand } from './commands/login.js'
-import { diffCommand } from './commands/diff.js'
 import { presetCommand } from './commands/preset.js'
-import { doctorCommand } from './commands/doctor.js'
-import { addCommand } from './commands/add.js'
+import { pullCommand } from './commands/pull.js'
+import { pushCommand } from './commands/push.js'
 
 export function run(argv: string[]) {
   const program = new Command()

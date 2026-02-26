@@ -1,10 +1,11 @@
-import { Command } from 'commander'
 import chalk from 'chalk'
-import { log } from '../utils/logger.js'
-import { listPresets } from '../presets/index.js'
+import { Command } from 'commander'
+
+import { checkMcpCredential } from '../core/credential-store.js'
 import { getAllHookTemplates } from '../hooks-library/index.js'
 import { getAllMcpDefinitions } from '../mcps/index.js'
-import { checkMcpCredential } from '../core/credential-store.js'
+import { listPresets } from '../presets/index.js'
+import { log } from '../utils/logger.js'
 
 export function listCommand(): Command {
   return new Command('list')
@@ -12,7 +13,7 @@ export function listCommand(): Command {
     .option('--presets', 'List presets only')
     .option('--hooks', 'List hooks only')
     .option('--mcps', 'List MCP servers only')
-    .action(async (options) => {
+    .action((options: { presets?: boolean; hooks?: boolean; mcps?: boolean }) => {
       const showAll = !options.presets && !options.hooks && !options.mcps
 
       if (showAll || options.presets) {
@@ -25,7 +26,9 @@ export function listCommand(): Command {
           )
           console.log(chalk.gray(`    ${preset.description}`))
           console.log(
-            chalk.gray(`    Defaults: max ${preset.defaults.maxLinesPerFile} lines, ${preset.defaults.qualityLevel}`),
+            chalk.gray(
+              `    Defaults: max ${preset.defaults.maxLinesPerFile} lines, ${preset.defaults.qualityLevel}`,
+            ),
           )
           console.log()
         }
@@ -34,11 +37,7 @@ export function listCommand(): Command {
       if (showAll || options.hooks) {
         log.title('Available Hooks')
         for (const hook of getAllHookTemplates()) {
-          console.log(
-            chalk.bold.white(`  ${hook.id}`),
-            chalk.gray('—'),
-            chalk.dim(hook.name),
-          )
+          console.log(chalk.bold.white(`  ${hook.id}`), chalk.gray('—'), chalk.dim(hook.name))
           console.log(chalk.gray(`    ${hook.description}`))
           console.log(chalk.gray(`    Event: ${hook.event}, Matcher: ${hook.matcher}`))
           console.log()
@@ -50,7 +49,9 @@ export function listCommand(): Command {
         for (const mcp of getAllMcpDefinitions()) {
           const hasAuth = checkMcpCredential(mcp)
           const status = mcp.requiresAuth
-            ? (hasAuth ? chalk.green('authenticated') : chalk.yellow('needs setup'))
+            ? hasAuth
+              ? chalk.green('authenticated')
+              : chalk.yellow('needs setup')
             : chalk.gray('no auth needed')
 
           console.log(

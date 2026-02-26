@@ -1,16 +1,18 @@
-import { Command } from 'commander'
-import { join, relative } from 'node:path'
 import { cp } from 'node:fs/promises'
-import { log } from '../utils/logger.js'
+import path from 'node:path'
+
+import { Command } from 'commander'
+
 import { loadProjectManifest, ensureLoggedIn, saveProjectManifest } from '../core/config.js'
 import { GitHubSync } from '../core/github-sync.js'
 import { fileExists, ensureDir, writeJsonFile, listFilesRecursive } from '../utils/fs.js'
+import { log } from '../utils/logger.js'
 
 export function pushCommand(): Command {
   return new Command('push')
     .description('Push configs to your central config repository')
     .option('-m, --message <msg>', 'Custom commit message')
-    .action(async (options) => {
+    .action(async (options: { message?: string }) => {
       const cwd = process.cwd()
       log.title('claude-forge push')
 
@@ -41,29 +43,31 @@ export function pushCommand(): Command {
       log.step('Syncing configs')
 
       for (const file of manifest.managedFiles) {
-        const sourcePath = join(cwd, file)
-        if (!await fileExists(sourcePath)) {
+        const sourcePath = path.join(cwd, file)
+        if (!(await fileExists(sourcePath))) {
           log.warn(`Skipping missing file: ${file}`)
           continue
         }
 
-        const destPath = join(repoDir, file)
-        await ensureDir(join(destPath, '..'))
+        const destPath = path.join(repoDir, file)
+        await ensureDir(path.join(destPath, '..'))
         await cp(sourcePath, destPath, { recursive: true })
         log.file('Synced', file)
       }
 
-      const manifestDest = join(repoDir, 'manifest.json')
+      const manifestDest = path.join(repoDir, 'manifest.json')
       const updatedManifest = { ...manifest, lastSynced: new Date().toISOString() }
       await writeJsonFile(manifestDest, updatedManifest)
 
-      const commitMsg = options.message
-        ?? `sync: update configs (${new Date().toISOString().split('T')[0]})`
+      const commitMsg =
+        options.message ?? `sync: update configs (${new Date().toISOString().split('T')[0]})`
 
       await sync.commitAndPush(commitMsg)
 
       log.blank()
-      log.success(`Pushed ${manifest.managedFiles.length} files to "${globalConfig.repoOwner}/${globalConfig.repoName}"`)
+      log.success(
+        `Pushed ${manifest.managedFiles.length} files to "${globalConfig.repoOwner}/${globalConfig.repoName}"`,
+      )
       log.dim('  Run "claude-forge pull" in any project to use these configs.')
     })
 }
@@ -72,12 +76,12 @@ async function discoverUnmanagedFiles(
   projectDir: string,
   managedFiles: string[],
 ): Promise<string[]> {
-  const claudeDir = join(projectDir, '.claude')
+  const claudeDir = path.join(projectDir, '.claude')
   const allFiles = await listFilesRecursive(claudeDir)
 
   const newFiles: string[] = []
   for (const absolutePath of allFiles) {
-    const relativePath = `.claude/${relative(claudeDir, absolutePath)}`
+    const relativePath = `.claude/${path.relative(claudeDir, absolutePath)}`
 
     // Skip settings.local.json — it's project-specific
     if (relativePath === '.claude/settings.local.json') continue
@@ -92,6 +96,6 @@ async function discoverUnmanagedFiles(
 
 function syncHookIds(managedFiles: string[]): string[] {
   return managedFiles
-    .filter(f => f.startsWith('.claude/hooks/') && f.endsWith('.sh'))
-    .map(f => f.replace('.claude/hooks/', '').replace('.sh', ''))
+    .filter((f) => f.startsWith('.claude/hooks/') && f.endsWith('.sh'))
+    .map((f) => f.replace('.claude/hooks/', '').replace('.sh', ''))
 }

@@ -1,8 +1,9 @@
 import { input, select, checkbox } from '@inquirer/prompts'
-import { listPresets } from '../presets/index.js'
-import { getAllSections } from '../sections/index.js'
+
 import { getAllHookTemplates } from '../hooks-library/index.js'
 import { getAllMcpDefinitions } from '../mcps/index.js'
+import { listPresets } from '../presets/index.js'
+import { getAllSections } from '../sections/index.js'
 
 export interface PresetAnswers {
   name: string
@@ -33,7 +34,7 @@ export async function askPresetPrompts(): Promise<PresetAnswers> {
   const presets = listPresets()
   const basePreset = await select({
     message: 'Base preset to extend:',
-    choices: presets.map(p => ({
+    choices: presets.map((p) => ({
       name: `${p.displayName} — ${p.description}`,
       value: p.name,
     })),
@@ -42,7 +43,7 @@ export async function askPresetPrompts(): Promise<PresetAnswers> {
   const sections = getAllSections()
   const enabledSections = await checkbox({
     message: 'Sections to include:',
-    choices: sections.map(s => ({
+    choices: sections.map((s) => ({
       name: `${s.emoji} ${s.title}`,
       value: s.id,
       checked: true,
@@ -52,7 +53,7 @@ export async function askPresetPrompts(): Promise<PresetAnswers> {
   const hooks = getAllHookTemplates()
   const enabledHooks = await checkbox({
     message: 'Hooks to include:',
-    choices: hooks.map(h => ({
+    choices: hooks.map((h) => ({
       name: `${h.name} — ${h.description}`,
       value: h.id,
     })),
@@ -61,7 +62,7 @@ export async function askPresetPrompts(): Promise<PresetAnswers> {
   const mcps = getAllMcpDefinitions()
   const enabledMcps = await checkbox({
     message: 'MCP servers:',
-    choices: mcps.map(m => ({
+    choices: mcps.map((m) => ({
       name: `${m.displayName} — ${m.description}`,
       value: m.name,
     })),

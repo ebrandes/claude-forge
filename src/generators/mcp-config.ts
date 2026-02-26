@@ -1,7 +1,8 @@
-import { join } from 'node:path'
-import { readJsonFile, writeJsonFile } from '../utils/fs.js'
-import { getMcpDefinition } from '../mcps/index.js'
+import path from 'node:path'
+
 import { checkMcpCredential, printCredentialSetup } from '../core/credential-store.js'
+import { getMcpDefinition } from '../mcps/index.js'
+import { writeJsonFile } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 
 interface ClaudeSettings {
@@ -33,10 +34,10 @@ export async function generateMcpConfig(
     }
 
     const hasCredential = checkMcpCredential(definition)
-    if (!hasCredential) {
-      printCredentialSetup(definition)
+    if (hasCredential) {
+      log.success(`${definition.displayName}: ${definition.authEnvVar ?? ''} is set`)
     } else {
-      log.success(`${definition.displayName}: ${definition.authEnvVar} is set`)
+      printCredentialSetup(definition)
     }
 
     const serverConfig: McpServerConfig = {
@@ -54,7 +55,7 @@ export async function generateMcpConfig(
     mcpServers[mcpName] = serverConfig
   }
 
-  const settingsPath = join(projectDir, '.claude', 'settings.json')
+  const settingsPath = path.join(projectDir, '.claude', 'settings.json')
   const merged: ClaudeSettings = { ...existingSettings, mcpServers }
   await writeJsonFile(settingsPath, merged)
   log.file('Updated', '.claude/settings.json (MCP servers added)')

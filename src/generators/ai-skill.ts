@@ -1,10 +1,11 @@
-import { join } from 'node:path'
-import type { SkillDefinition } from '../types/index.js'
-import type { ForgeProjectManifest } from '../types/index.js'
-import { generateWithClaude } from '../core/anthropic-client.js'
+import path from 'node:path'
+
 import { buildSkillSystemPrompt, buildSkillUserPrompt } from '../ai/prompt-templates.js'
+import { generateWithClaude } from '../core/anthropic-client.js'
 import { writeTextFile, readJsonFile, writeJsonFile, ensureDir } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
+
+import type { ForgeProjectManifest, SkillDefinition } from '../types/index.js'
 
 export async function generateSkillFromDescription(description: string): Promise<SkillDefinition> {
   const result = await generateWithClaude(
@@ -17,11 +18,14 @@ export async function generateSkillFromDescription(description: string): Promise
 }
 
 function parseSkillResponse(raw: string): SkillDefinition {
-  const cleaned = raw.replace(/^```(?:json)?\n?/gm, '').replace(/\n?```$/gm, '').trim()
+  const cleaned = raw
+    .replaceAll(/^```(?:json)?\n?/gm, '')
+    .replaceAll(/\n?```$/gm, '')
+    .trim()
 
-  const parsed = JSON.parse(cleaned)
+  const parsed: unknown = JSON.parse(cleaned)
   validateSkillDefinition(parsed)
-  return parsed as SkillDefinition
+  return parsed
 }
 
 function validateSkillDefinition(obj: unknown): asserts obj is SkillDefinition {
@@ -36,10 +40,10 @@ export async function saveGeneratedSkill(
   projectDir: string,
   skill: SkillDefinition,
 ): Promise<void> {
-  const commandsDir = join(projectDir, '.claude', 'commands')
+  const commandsDir = path.join(projectDir, '.claude', 'commands')
   await ensureDir(commandsDir)
 
-  const skillPath = join(commandsDir, `${skill.name}.md`)
+  const skillPath = path.join(commandsDir, `${skill.name}.md`)
   await writeTextFile(skillPath, skill.content)
   log.file('Created', `.claude/commands/${skill.name}.md`)
 
@@ -47,11 +51,10 @@ export async function saveGeneratedSkill(
 }
 
 async function updateManifestSkills(projectDir: string, skillName: string): Promise<void> {
-  const manifestPath = join(projectDir, '.claude-forge.json')
+  const manifestPath = path.join(projectDir, '.claude-forge.json')
   const manifest = await readJsonFile<ForgeProjectManifest>(manifestPath)
   if (!manifest) return
 
-  if (!manifest.skills) manifest.skills = []
   if (!manifest.skills.includes(skillName)) {
     manifest.skills.push(skillName)
   }

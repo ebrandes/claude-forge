@@ -1,16 +1,28 @@
 {
-  "name": "claude-forge",
-  "version": "1.0.0",
+  "name": "@ebrandes3/claude-forge",
+  "version": "0.1.0",
   "description": "CLI for managing Claude Code configurations across projects",
   "type": "module",
   "bin": {
     "claude-forge": "./dist/bin/claude-forge.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "start": "node dist/bin/claude-forge.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "prepare": "husky"
   },
   "keywords": [
     "claude",
@@ -32,9 +44,20 @@
     "diff": "^7.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.3",
     "@types/diff": "^6.0.0",
     "@types/node": "^22.13.0",
+    "eslint": "^9.39.3",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.1",
+    "eslint-plugin-unicorn": "^63.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
     "tsup": "^8.4.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^4.0.18"
   }
 }

@@ -1,5 +1,6 @@
-import type { PresetDefinition } from '../types/index.js'
 import { getHookTemplate } from '../hooks-library/index.js'
+
+import type { PresetDefinition } from '../types/index.js'
 
 interface ClaudeSettings {
   permissions?: {
@@ -27,10 +28,7 @@ interface McpServerSettings {
   env?: Record<string, string>
 }
 
-export function generateSettings(
-  preset: PresetDefinition,
-  enabledHooks: string[],
-): ClaudeSettings {
+export function generateSettings(preset: PresetDefinition, enabledHooks: string[]): ClaudeSettings {
   const settings: ClaudeSettings = {}
 
   if (preset.settings.permissions?.allow) {
@@ -75,7 +73,7 @@ function buildHookEntries(enabledHooks: string[]): Record<string, HookEntry[]> {
   const result: Record<string, HookEntry[]> = {}
   for (const [key, entry] of grouped) {
     const event = key.split(':')[0]
-    if (!result[event]) result[event] = []
+    result[event] ??= []
     result[event].push(entry)
   }
 

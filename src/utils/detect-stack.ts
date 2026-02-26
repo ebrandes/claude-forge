@@ -1,4 +1,5 @@
-import { join } from 'node:path'
+import path from 'node:path'
+
 import { readJsonFile, fileExists } from './fs.js'
 
 export interface DetectedStack {
@@ -23,8 +24,8 @@ export async function detectStack(projectDir: string): Promise<DetectedStack> {
     hasTypeScript: false,
   }
 
-  const packageJson = await readJsonFile<PackageJson>(join(projectDir, 'package.json'))
-  const hasPubspec = await fileExists(join(projectDir, 'pubspec.yaml'))
+  const packageJson = await readJsonFile<PackageJson>(path.join(projectDir, 'package.json'))
+  const hasPubspec = await fileExists(path.join(projectDir, 'pubspec.yaml'))
 
   if (hasPubspec) {
     result.framework = 'Flutter'
@@ -68,8 +69,9 @@ export async function detectStack(projectDir: string): Promise<DetectedStack> {
     result.presetSuggestion = 'fastify-api'
   }
 
-  const hasWorkspaces = await fileExists(join(projectDir, 'pnpm-workspace.yaml'))
-    || await fileExists(join(projectDir, 'lerna.json'))
+  const hasWorkspaces =
+    (await fileExists(path.join(projectDir, 'pnpm-workspace.yaml'))) ||
+    (await fileExists(path.join(projectDir, 'lerna.json')))
   if (hasWorkspaces) {
     result.presetSuggestion = 'monorepo'
   }

@@ -1,28 +1,30 @@
 import { Command } from 'commander'
-import { log } from '../utils/logger.js'
-import { askForDescription, reviewGeneratedContent } from '../prompts/add-prompts.js'
+
 import { generateHookFromDescription, saveGeneratedHook } from '../generators/ai-hook.js'
+import { askForDescription, reviewGeneratedContent } from '../prompts/add-prompts.js'
+import { log } from '../utils/logger.js'
 
 export function addHookCommand(): Command {
   return new Command('hook')
     .description('Generate a Claude Code hook using AI')
     .argument('[description...]', 'Description of the hook to generate')
     .option('-d, --description <text>', 'Description of the hook to generate')
-    .action(async (args: string[], options) => {
+    .action(async (args: string[], options: { description?: string }) => {
       const cwd = process.cwd()
       log.title('claude-forge add hook')
       log.dim('AI-assisted hook generation')
       log.blank()
 
       const inlineDescription = args.length > 0 ? args.join(' ') : null
-      const description = inlineDescription ?? options.description ?? await askForDescription('hook')
+      const description =
+        inlineDescription ?? options.description ?? (await askForDescription('hook'))
 
       log.step('Generating hook with AI...')
       let hook
       try {
         hook = await generateHookFromDescription(description)
-      } catch (error) {
-        log.error(`Generation failed: ${error instanceof Error ? error.message : error}`)
+      } catch (error: unknown) {
+        log.error(`Generation failed: ${error instanceof Error ? error.message : String(error)}`)
         process.exit(1)
       }
 

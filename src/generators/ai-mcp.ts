@@ -1,32 +1,41 @@
-import { join } from 'node:path'
-import type { McpDefinition, McpServerEntry, ForgeProjectManifest } from '../types/index.js'
-import { generateWithClaude } from '../core/anthropic-client.js'
+import path from 'node:path'
+
 import { buildMcpSystemPrompt, buildMcpUserPrompt } from '../ai/prompt-templates.js'
-import { readJsonFile, writeJsonFile } from '../utils/fs.js'
+import { generateWithClaude } from '../core/anthropic-client.js'
 import { saveCredentials } from '../core/credential-store.js'
+import { readJsonFile, writeJsonFile } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 
+import type { McpDefinition, McpServerEntry, ForgeProjectManifest } from '../types/index.js'
+
 export async function generateMcpFromDescription(description: string): Promise<McpDefinition> {
-  const result = await generateWithClaude(
-    buildMcpSystemPrompt(),
-    buildMcpUserPrompt(description),
-  )
+  const result = await generateWithClaude(buildMcpSystemPrompt(), buildMcpUserPrompt(description))
 
   log.dim(`  (${result.inputTokens} in / ${result.outputTokens} out tokens)`)
   return parseMcpResponse(result.content)
 }
 
 function parseMcpResponse(raw: string): McpDefinition {
-  const cleaned = raw.replace(/^```(?:json)?\n?/gm, '').replace(/\n?```$/gm, '').trim()
+  const cleaned = raw
+    .replaceAll(/^```(?:json)?\n?/gm, '')
+    .replaceAll(/\n?```$/gm, '')
+    .trim()
 
-  const parsed = JSON.parse(cleaned)
+  const parsed: unknown = JSON.parse(cleaned)
   validateMcpDefinition(parsed)
-  return parsed as McpDefinition
+  return parsed
 }
 
 function validateMcpDefinition(obj: unknown): asserts obj is McpDefinition {
   const mcp = obj as Record<string, unknown>
-  const required = ['name', 'displayName', 'description', 'serverCommand', 'requiresAuth', 'authType']
+  const required = [
+    'name',
+    'displayName',
+    'description',
+    'serverCommand',
+    'requiresAuth',
+    'authType',
+  ]
   for (const field of required) {
     if (mcp[field] === undefined) throw new Error(`Missing required field: ${field}`)
   }
@@ -48,8 +57,8 @@ export async function saveGeneratedMcp(
 }
 
 async function registerMcpInSettings(projectDir: string, mcp: McpDefinition): Promise<void> {
-  const settingsPath = join(projectDir, '.claude', 'settings.json')
-  const settings = await readJsonFile<Record<string, unknown>>(settingsPath) ?? {}
+  const settingsPath = path.join(projectDir, '.claude', 'settings.json')
+  const settings = (await readJsonFile<Record<string, unknown>>(settingsPath)) ?? {}
 
   const mcpServers = (settings.mcpServers ?? {}) as Record<string, McpServerEntry>
 
@@ -65,19 +74,15 @@ async function registerMcpInSettings(projectDir: string, mcp: McpDefinition): Pr
   log.file('Updated', '.claude/settings.json')
 }
 
-async function saveMcpToken(
-  projectDir: string,
-  mcp: McpDefinition,
-  token: string,
-): Promise<void> {
-  const localPath = join(projectDir, '.claude', 'settings.local.json')
-  const local = await readJsonFile<Record<string, unknown>>(localPath) ?? {}
+async function saveMcpToken(projectDir: string, mcp: McpDefinition, token: string): Promise<void> {
+  const localPath = path.join(projectDir, '.claude', 'settings.local.json')
+  const local = (await readJsonFile<Record<string, unknown>>(localPath)) ?? {}
   const mcpServers = (local.mcpServers ?? {}) as Record<string, McpServerEntry>
 
   mcpServers[mcp.name] = {
     command: mcp.serverCommand,
     ...(mcp.args?.length ? { args: mcp.args } : {}),
-    env: { [mcp.authEnvVar!]: token },
+    ...(mcp.authEnvVar ? { env: { [mcp.authEnvVar]: token } } : {}),
   }
 
   local.mcpServers = mcpServers
@@ -86,7 +91,7 @@ async function saveMcpToken(
 }
 
 async function updateManifestMcps(projectDir: string, mcpName: string): Promise<void> {
-  const manifestPath = join(projectDir, '.claude-forge.json')
+  const manifestPath = path.join(projectDir, '.claude-forge.json')
   const manifest = await readJsonFile<ForgeProjectManifest>(manifestPath)
   if (!manifest) return
 

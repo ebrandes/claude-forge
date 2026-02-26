@@ -1,15 +1,17 @@
-import type { PresetDefinition } from '../types/index.js'
 import { getBaseSections, BASE_DEFAULTS } from './base.js'
+
+import type { PresetDefinition } from '../types/index.js'
 
 export const nodeLibPreset: PresetDefinition = {
   name: 'node-lib',
   displayName: 'Node.js Library',
   description: 'Node.js library with TypeScript, tests, and npm publishing',
   sections: [
-    ...getBaseSections().filter(s =>
-      s.sectionId !== 'responsive-design' &&
-      s.sectionId !== 'state-management' &&
-      s.sectionId !== 'accessibility',
+    ...getBaseSections().filter(
+      (s) =>
+        s.sectionId !== 'responsive-design' &&
+        s.sectionId !== 'state-management' &&
+        s.sectionId !== 'accessibility',
     ),
   ],
   hooks: [

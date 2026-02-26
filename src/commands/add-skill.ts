@@ -1,28 +1,32 @@
 import { Command } from 'commander'
-import { log } from '../utils/logger.js'
-import { askForDescription, reviewGeneratedContent } from '../prompts/add-prompts.js'
+
 import { generateSkillFromDescription, saveGeneratedSkill } from '../generators/ai-skill.js'
+import { askForDescription, reviewGeneratedContent } from '../prompts/add-prompts.js'
+import { log } from '../utils/logger.js'
 
 export function addSkillCommand(): Command {
   return new Command('skill')
     .description('Generate a Claude Code skill (slash command) using AI')
     .argument('[description...]', 'Description of the skill to generate')
     .option('-d, --description <text>', 'Description of the skill to generate')
-    .action(async (args: string[], options) => {
+    .action(async (args: string[], options: { description?: string }) => {
       const cwd = process.cwd()
       log.title('claude-forge add skill')
       log.dim('AI-assisted skill generation')
       log.blank()
 
       const inlineDescription = args.length > 0 ? args.join(' ') : null
-      const description = inlineDescription ?? options.description ?? await askForDescription('skill (slash command)')
+      const description =
+        inlineDescription ??
+        options.description ??
+        (await askForDescription('skill (slash command)'))
 
       log.step('Generating skill with AI...')
       let skill
       try {
         skill = await generateSkillFromDescription(description)
-      } catch (error) {
-        log.error(`Generation failed: ${error instanceof Error ? error.message : error}`)
+      } catch (error: unknown) {
+        log.error(`Generation failed: ${error instanceof Error ? error.message : String(error)}`)
         process.exit(1)
       }
 

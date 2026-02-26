@@ -1,12 +1,14 @@
-import { Command } from 'commander'
+import path from 'node:path'
+
 import chalk from 'chalk'
-import { log } from '../utils/logger.js'
-import { isGhInstalled, isGhAuthenticated } from '../utils/git.js'
+import { Command } from 'commander'
+
 import { loadGlobalConfig, loadProjectManifest } from '../core/config.js'
 import { loadCredentials } from '../core/credential-store.js'
 import { getMcpDefinition } from '../mcps/index.js'
 import { fileExists } from '../utils/fs.js'
-import { join } from 'node:path'
+import { isGhInstalled, isGhAuthenticated } from '../utils/git.js'
+import { log } from '../utils/logger.js'
 
 export function doctorCommand(): Command {
   return new Command('doctor')
@@ -39,7 +41,7 @@ export function doctorCommand(): Command {
 
           const hasEnv = process.env[def.authEnvVar] !== undefined
           const saved = await loadCredentials()
-          const hasSaved = saved?.tokens?.[def.authEnvVar] !== undefined
+          const hasSaved = saved?.tokens[def.authEnvVar] !== undefined
 
           if (hasEnv || hasSaved) {
             printOk(`${def.authEnvVar} is set${hasSaved && !hasEnv ? ' (saved in forge)' : ''}`)
@@ -89,7 +91,11 @@ function printFail(msg: string) {
 
 async function checkItem(label: string, check: () => Promise<boolean>): Promise<number> {
   const ok = await check()
-  ok ? printOk(label) : printFail(label)
+  if (ok) {
+    printOk(label)
+  } else {
+    printFail(label)
+  }
   return ok ? 0 : 1
 }
 
@@ -106,7 +112,11 @@ function checkEnvVar(envVar: string, setupUrl?: string): number {
 }
 
 async function checkFile(cwd: string, relativePath: string): Promise<number> {
-  const exists = await fileExists(join(cwd, relativePath))
-  exists ? printOk(`${relativePath} exists`) : printFail(`${relativePath} not found`)
+  const exists = await fileExists(path.join(cwd, relativePath))
+  if (exists) {
+    printOk(`${relativePath} exists`)
+  } else {
+    printFail(`${relativePath} not found`)
+  }
   return exists ? 0 : 1
 }

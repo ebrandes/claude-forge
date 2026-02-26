@@ -13,7 +13,8 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["vitest/globals"]
   },
   "include": ["src/**/*.ts", "bin/**/*.ts"],
   "exclude": ["node_modules", "dist"]

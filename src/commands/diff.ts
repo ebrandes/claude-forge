@@ -1,11 +1,13 @@
-import { Command } from 'commander'
-import { join } from 'node:path'
+import path from 'node:path'
+
 import chalk from 'chalk'
+import { Command } from 'commander'
 import { createTwoFilesPatch } from 'diff'
-import { log } from '../utils/logger.js'
+
 import { loadProjectManifest, ensureLoggedIn } from '../core/config.js'
 import { GitHubSync } from '../core/github-sync.js'
 import { readTextFile } from '../utils/fs.js'
+import { log } from '../utils/logger.js'
 
 export function diffCommand(): Command {
   return new Command('diff')
@@ -30,11 +32,11 @@ export function diffCommand(): Command {
       let hasDiffs = false
 
       for (const file of manifest.managedFiles) {
-        const localPath = join(cwd, file)
-        const remotePath = join(repoDir, file)
+        const localPath = path.join(cwd, file)
+        const remotePath = path.join(repoDir, file)
 
-        const localContent = await readTextFile(localPath) ?? ''
-        const remoteContent = await readTextFile(remotePath) ?? ''
+        const localContent = (await readTextFile(localPath)) ?? ''
+        const remoteContent = (await readTextFile(remotePath)) ?? ''
 
         if (localContent === remoteContent) continue
 

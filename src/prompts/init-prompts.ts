@@ -1,12 +1,14 @@
+import path from 'node:path'
+
 import { input, select, checkbox, confirm, number, password } from '@inquirer/prompts'
-import type { DetectedStack } from '../utils/detect-stack.js'
-import { listPresets } from '../presets/index.js'
+
+import { getSavedToken } from '../core/credential-store.js'
 import { getAllHookTemplates } from '../hooks-library/index.js'
 import { getAllMcpDefinitions } from '../mcps/index.js'
-import { getPresetByName } from '../presets/index.js'
-import { getSavedToken } from '../core/credential-store.js'
+import { listPresets, getPresetByName } from '../presets/index.js'
 import { log } from '../utils/logger.js'
-import { basename } from 'node:path'
+
+import type { DetectedStack } from '../utils/detect-stack.js'
 
 export interface InitAnswers {
   projectName: string
@@ -25,9 +27,7 @@ export interface InitAnswers {
   addApiKeyToZshrc: boolean
 }
 
-export async function askInitPrompts(
-  detected: DetectedStack,
-): Promise<InitAnswers> {
+export async function askInitPrompts(detected: DetectedStack): Promise<InitAnswers> {
   const collectedTokens: Record<string, string> = {}
   let addApiKeyToZshrc = false
 
@@ -42,13 +42,13 @@ export async function askInitPrompts(
     const saved = await getSavedToken('ANTHROPIC_API_KEY')
     if (saved) {
       log.success('ANTHROPIC_API_KEY found in saved credentials')
-      collectedTokens['ANTHROPIC_API_KEY'] = saved
+      collectedTokens.ANTHROPIC_API_KEY = saved
     } else {
       log.warn('ANTHROPIC_API_KEY is not set.')
       log.dim('  Get one at: https://console.anthropic.com/settings/keys')
       const token = await password({ message: 'Paste token (or Enter to skip):', mask: '*' })
       if (token) {
-        collectedTokens['ANTHROPIC_API_KEY'] = token
+        collectedTokens.ANTHROPIC_API_KEY = token
         addApiKeyToZshrc = await confirm({
           message: 'Add ANTHROPIC_API_KEY to ~/.zshrc?',
           default: true,
@@ -61,7 +61,7 @@ export async function askInitPrompts(
   // ─── STEP 1: Project info ───
   const projectName = await input({
     message: 'Project name:',
-    default: basename(process.cwd()),
+    default: path.basename(process.cwd()),
   })
 
   const projectDescription = await input({
@@ -83,7 +83,7 @@ export async function askInitPrompts(
       const presets = listPresets()
       presetName = await select({
         message: 'Select a preset:',
-        choices: presets.map(p => ({
+        choices: presets.map((p) => ({
           name: `${p.displayName} — ${p.description}`,
           value: p.name,
         })),
@@ -93,7 +93,7 @@ export async function askInitPrompts(
     const presets = listPresets()
     presetName = await select({
       message: 'Select a preset:',
-      choices: presets.map(p => ({
+      choices: presets.map((p) => ({
         name: `${p.displayName} — ${p.description}`,
         value: p.name,
       })),
@@ -101,7 +101,10 @@ export async function askInitPrompts(
     })
   }
 
-  const preset = getPresetByName(presetName)!
+  const preset = getPresetByName(presetName)
+  if (!preset) {
+    throw new Error(`Preset "${presetName}" not found`)
+  }
 
   const qualityLevel = await select({
     message: 'Quality/Security level:',
@@ -113,12 +116,13 @@ export async function askInitPrompts(
     default: preset.defaults.qualityLevel,
   })
 
-  const maxLinesPerFile = await number({
-    message: 'Max lines per file:',
-    default: preset.defaults.maxLinesPerFile,
-    min: 100,
-    max: 1000,
-  }) ?? preset.defaults.maxLinesPerFile
+  const maxLinesPerFile =
+    (await number({
+      message: 'Max lines per file:',
+      default: preset.defaults.maxLinesPerFile,
+      min: 100,
+      max: 1000,
+    })) ?? preset.defaults.maxLinesPerFile
 
   const isWebProject = ['next-app', 'react-spa'].includes(presetName)
   let responsiveMode: InitAnswers['responsiveMode']
@@ -129,9 +133,18 @@ export async function askInitPrompts(
     responsiveMode = await select({
       message: 'Responsive design strategy:',
       choices: [
-        { name: 'mobile-first — Mobile is the base, desktop enhances', value: 'mobile-first' as const },
-        { name: 'desktop-first — Desktop is the base, mobile adapts', value: 'desktop-first' as const },
-        { name: 'context-aware — Different routes have different priorities', value: 'context-aware' as const },
+        {
+          name: 'mobile-first — Mobile is the base, desktop enhances',
+          value: 'mobile-first' as const,
+        },
+        {
+          name: 'desktop-first — Desktop is the base, mobile adapts',
+          value: 'desktop-first' as const,
+        },
+        {
+          name: 'context-aware — Different routes have different priorities',
+          value: 'context-aware' as const,
+        },
       ],
     })
 
@@ -140,17 +153,23 @@ export async function askInitPrompts(
         message: 'Mobile-first routes (comma-separated):',
         default: '/field, /shop',
       })
-      mobileFirstRoutes = mobileInput.split(',').map(r => r.trim()).filter(Boolean)
+      mobileFirstRoutes = mobileInput
+        .split(',')
+        .map((r) => r.trim())
+        .filter(Boolean)
 
       const desktopInput = await input({
         message: 'Desktop-first routes (comma-separated):',
         default: '/admin, /dashboard',
       })
-      desktopFirstRoutes = desktopInput.split(',').map(r => r.trim()).filter(Boolean)
+      desktopFirstRoutes = desktopInput
+        .split(',')
+        .map((r) => r.trim())
+        .filter(Boolean)
     }
   }
 
-  const sectionChoices = preset.sections.map(s => ({
+  const sectionChoices = preset.sections.map((s) => ({
     name: s.sectionId,
     value: s.sectionId,
     checked: s.enabled,
@@ -162,26 +181,26 @@ export async function askInitPrompts(
   })
 
   const hookTemplates = getAllHookTemplates()
-  const presetHookIds = preset.hooks.map(h => h.templateId)
+  const presetHookIds = new Set(preset.hooks.map((h) => h.templateId))
 
   const enabledHooks = await checkbox({
     message: 'Hooks to include:',
-    choices: hookTemplates.map(h => ({
+    choices: hookTemplates.map((h) => ({
       name: `${h.name} — ${h.description}`,
       value: h.id,
-      checked: presetHookIds.includes(h.id),
+      checked: presetHookIds.has(h.id),
     })),
   })
 
   const mcpDefinitions = getAllMcpDefinitions()
-  const presetMcpNames = preset.mcps.map(m => m.name)
+  const presetMcpNames = new Set(preset.mcps.map((m) => m.name))
 
   const enabledMcps = await checkbox({
     message: 'MCP servers to configure:',
-    choices: mcpDefinitions.map(m => ({
+    choices: mcpDefinitions.map((m) => ({
       name: `${m.displayName} — ${m.description}`,
       value: m.name,
-      checked: presetMcpNames.includes(m.name),
+      checked: presetMcpNames.has(m.name),
     })),
   })
 

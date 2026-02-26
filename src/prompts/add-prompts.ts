@@ -1,12 +1,12 @@
 import { input, confirm, editor, password } from '@inquirer/prompts'
 import chalk from 'chalk'
+
 import { log } from '../utils/logger.js'
 
 export async function askForDescription(itemType: string): Promise<string> {
   return input({
     message: `Describe the ${itemType} you want to create:`,
-    validate: (v) =>
-      v.trim().length >= 10 || 'Please provide more detail (at least 10 characters)',
+    validate: (v) => v.trim().length >= 10 || 'Please provide more detail (at least 10 characters)',
   })
 }
 

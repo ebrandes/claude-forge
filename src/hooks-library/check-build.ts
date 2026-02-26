@@ -8,7 +8,7 @@ export const checkBuildHook: HookTemplate = {
   matcher: 'Edit|Write',
   timeout: 60,
   statusMessage: 'Checking build...',
-  script: `#!/bin/bash
+  script: String.raw`#!/bin/bash
 # PostToolUse hook: runs build to catch errors that tsc alone misses
 # (dynamic imports, SSR issues, bundle errors, env vars)
 
@@ -16,12 +16,12 @@ INPUT=$(cat)
 FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 
 # Skip non-source files
-if [ -z "$FILE" ] || ! echo "$FILE" | grep -qE '\\.(ts|tsx|js|jsx)$'; then
+if [ -z "$FILE" ] || ! echo "$FILE" | grep -qE '\.(ts|tsx|js|jsx)$'; then
   exit 0
 fi
 
 # Only run on significant files (skip test files, configs)
-if echo "$FILE" | grep -qE '\\.(test|spec|config)\\.(ts|tsx|js|jsx)$'; then
+if echo "$FILE" | grep -qE '\.(test|spec|config)\.(ts|tsx|js|jsx)$'; then
   exit 0
 fi
 

@@ -1,6 +1,10 @@
-import { Command } from 'commander'
+import { existsSync } from 'node:fs'
+
 import { input, confirm, select } from '@inquirer/prompts'
-import { log } from '../utils/logger.js'
+import { Command } from 'commander'
+
+import { saveGlobalConfig, loadGlobalConfig } from '../core/config.js'
+import { ensureDir, getForgeRepoDir } from '../utils/fs.js'
 import {
   isGhInstalled,
   isGhAuthenticated,
@@ -9,11 +13,9 @@ import {
   ghAddTopics,
   exec,
   execInteractive,
+  gitClone,
 } from '../utils/git.js'
-import { saveGlobalConfig, loadGlobalConfig } from '../core/config.js'
-import { ensureDir, getForgeRepoDir } from '../utils/fs.js'
-import { gitClone } from '../utils/git.js'
-import { existsSync } from 'node:fs'
+import { log } from '../utils/logger.js'
 
 const FORGE_TOPIC = 'claude-forge'
 
@@ -28,14 +30,14 @@ export function loginCommand(): Command {
 export async function runLogin(): Promise<void> {
   log.title('claude-forge login')
 
-  if (!await isGhInstalled()) {
+  if (!(await isGhInstalled())) {
     log.error('GitHub CLI (gh) is required but not installed.')
     log.dim('Install it with: brew install gh')
     process.exit(1)
   }
   log.success('GitHub CLI found')
 
-  if (!await isGhAuthenticated()) {
+  if (!(await isGhAuthenticated())) {
     log.warn('Not authenticated with GitHub. Running gh auth login...')
     try {
       await execInteractive('gh', ['auth', 'login'])
@@ -76,7 +78,7 @@ export async function runLogin(): Promise<void> {
     repoSlug = await select({
       message: 'Multiple config repos found. Which one?',
       choices: [
-        ...found.map(r => ({ name: r.nameWithOwner, value: r.nameWithOwner })),
+        ...found.map((r) => ({ name: r.nameWithOwner, value: r.nameWithOwner })),
         { name: 'Create a new one', value: '__new__' },
       ],
     })
@@ -85,22 +87,20 @@ export async function runLogin(): Promise<void> {
     log.dim('  No existing config repo found')
   }
 
-  if (!repoSlug) {
-    repoSlug = await input({
-      message: 'Repo name for your configs:',
-      default: 'my-claude-configs',
-      validate: (v) => v.length > 0 || 'Required',
-    })
-  }
+  repoSlug ??= await input({
+    message: 'Repo name for your configs:',
+    default: 'my-claude-configs',
+    validate: (v) => v.length > 0 || 'Required',
+  })
 
-  const parts = repoSlug.includes('/')
-    ? repoSlug.split('/')
-    : [await getGhUsername(), repoSlug]
+  const parts = repoSlug.includes('/') ? repoSlug.split('/') : [await getGhUsername(), repoSlug]
 
   const [owner, name] = parts
 
   const repoExists = await ghRepoExists(owner, name)
-  if (!repoExists) {
+  if (repoExists) {
+    log.success(`Repo found: ${owner}/${name}`)
+  } else {
     log.step(`Creating private repo: ${owner}/${name}`)
     try {
       await exec('gh', ['repo', 'create', `${owner}/${name}`, '--private'])
@@ -109,8 +109,6 @@ export async function runLogin(): Promise<void> {
       log.error('Failed to create repo. Create it manually on GitHub.')
       process.exit(1)
     }
-  } else {
-    log.success(`Repo found: ${owner}/${name}`)
   }
 
   // Tag the repo so we can find it later
@@ -121,7 +119,9 @@ export async function runLogin(): Promise<void> {
   }
 
   const repoDir = getForgeRepoDir()
-  if (!existsSync(repoDir)) {
+  if (existsSync(repoDir)) {
+    log.success('Sync repo already cloned')
+  } else {
     log.step('Cloning sync repo locally...')
     await ensureDir(repoDir)
     try {
@@ -130,10 +130,12 @@ export async function runLogin(): Promise<void> {
     } catch {
       log.warn('Clone failed (repo might be empty). Initializing locally...')
       await exec('git', ['init'], repoDir)
-      await exec('git', ['remote', 'add', 'origin', `https://github.com/${owner}/${name}.git`], repoDir)
+      await exec(
+        'git',
+        ['remote', 'add', 'origin', `https://github.com/${owner}/${name}.git`],
+        repoDir,
+      )
     }
-  } else {
-    log.success('Sync repo already cloned')
   }
 
   await saveGlobalConfig({

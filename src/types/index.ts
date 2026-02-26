@@ -14,10 +14,5 @@ export type {
   CustomSection,
   CredentialCache,
 } from './config.js'
-export type {
-  McpDefinition,
-  McpRegistry,
-  McpProjectConfig,
-  McpServerEntry,
-} from './mcp.js'
+export type { McpDefinition, McpRegistry, McpProjectConfig, McpServerEntry } from './mcp.js'
 export type { SkillDefinition } from './skill.js'

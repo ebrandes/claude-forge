@@ -1,7 +1,7 @@
 // ─── HOOK GENERATION ───
 
 export function buildHookSystemPrompt(): string {
-  return `You are an expert at writing Claude Code hooks — bash scripts that run as pre/post tool-use event handlers.
+  return String.raw`You are an expert at writing Claude Code hooks — bash scripts that run as pre/post tool-use event handlers.
 
 Claude Code hooks receive JSON on stdin with this structure:
 - PostToolUse: { "tool_name": string, "tool_input": object, "tool_result": object }
@@ -31,7 +31,7 @@ Respond with ONLY a JSON object (no markdown fences, no extra text):
   "matcher": "Edit|Write",
   "timeout": 30,
   "statusMessage": "Checking...",
-  "script": "#!/bin/bash\\n..."
+  "script": "#!/bin/bash\n..."
 }`
 }
 

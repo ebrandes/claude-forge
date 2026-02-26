@@ -11,7 +11,7 @@ export interface ExecResult {
 export async function exec(command: string, args: string[], cwd?: string): Promise<ExecResult> {
   const result = await execFileAsync(command, args, {
     cwd,
-    encoding: 'utf-8',
+    encoding: 'utf8',
     maxBuffer: 10 * 1024 * 1024,
   })
   return { stdout: result.stdout.trim(), stderr: result.stderr.trim() }
@@ -22,7 +22,7 @@ export async function execInteractive(command: string, args: string[]): Promise<
     const child = spawn(command, args, { stdio: 'inherit' })
     child.on('close', (code) => {
       if (code === 0) resolve()
-      else reject(new Error(`${command} exited with code ${code}`))
+      else reject(new Error(`${command} exited with code ${code ?? 'unknown'}`))
     })
     child.on('error', reject)
   })
@@ -85,7 +85,12 @@ export async function gitHasChanges(repoDir: string): Promise<boolean> {
 }
 
 export async function ghAddTopics(owner: string, name: string, topics: string[]): Promise<void> {
-  await exec('gh', ['repo', 'edit', `${owner}/${name}`, ...topics.flatMap(t => ['--add-topic', t])])
+  await exec('gh', [
+    'repo',
+    'edit',
+    `${owner}/${name}`,
+    ...topics.flatMap((t) => ['--add-topic', t]),
+  ])
 }
 
 export interface GhRepo {
@@ -97,7 +102,14 @@ export interface GhRepo {
 export async function ghFindReposByTopic(topic: string): Promise<GhRepo[]> {
   try {
     const result = await exec('gh', [
-      'repo', 'list', '--topic', topic, '--json', 'nameWithOwner,name,isPrivate', '--limit', '10',
+      'repo',
+      'list',
+      '--topic',
+      topic,
+      '--json',
+      'nameWithOwner,name,isPrivate',
+      '--limit',
+      '10',
     ])
     if (!result.stdout) return []
     return JSON.parse(result.stdout) as GhRepo[]

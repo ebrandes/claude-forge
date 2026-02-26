@@ -1,7 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { password } from '@inquirer/prompts'
-import { getSavedToken, saveCredentials } from './credential-store.js'
+
 import { log } from '../utils/logger.js'
+
+import { getSavedToken, saveCredentials } from './credential-store.js'
 
 let clientInstance: Anthropic | null = null
 
@@ -58,8 +60,8 @@ export async function generateWithClaude(
     messages: [{ role: 'user', content: userMessage }],
   })
 
-  const textBlock = response.content.find(block => block.type === 'text')
-  if (!textBlock || textBlock.type !== 'text') {
+  const textBlock = response.content.find((block) => block.type === 'text')
+  if (!textBlock) {
     throw new Error('No text content in API response')
   }
 

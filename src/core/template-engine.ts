@@ -1,5 +1,6 @@
-import type { SectionConfig, SectionParams, Section } from '../types/index.js'
 import { sectionRegistry } from '../sections/index.js'
+
+import type { SectionConfig, SectionParams } from '../types/index.js'
 
 const FORGE_START = (id: string) => `<!-- forge:start:${id} -->`
 const FORGE_END = (id: string) => `<!-- forge:end:${id} -->`
@@ -37,19 +38,16 @@ export function extractManagedSections(markdown: string): Map<string, string> {
 
 export function extractUnmanagedContent(markdown: string): string[] {
   const parts = markdown.split(/<!-- forge:start:\S+ -->[\s\S]*?<!-- forge:end:\S+ -->/)
-  return parts.map(p => p.trim()).filter(p => p.length > 0)
+  return parts.map((p) => p.trim()).filter((p) => p.length > 0)
 }
 
-export function mergeWithExisting(
-  newContent: string,
-  existingContent: string,
-): string {
+export function mergeWithExisting(newContent: string, existingContent: string): string {
   const existingUnmanaged = extractUnmanagedContent(existingContent)
 
   if (existingUnmanaged.length === 0) return newContent
 
   const unmanagedBlock = existingUnmanaged
-    .filter(block => !block.startsWith('# ') && block !== '---')
+    .filter((block) => !block.startsWith('# ') && block !== '---')
     .join('\n\n')
 
   if (!unmanagedBlock) return newContent

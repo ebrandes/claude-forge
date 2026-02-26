@@ -1,19 +1,13 @@
-import type { McpDefinition } from '../types/index.js'
-import { vercelMcp } from './vercel.js'
-import { supabaseMcp } from './supabase.js'
 import { githubMcp } from './github.js'
 import { railwayMcp } from './railway.js'
+import { supabaseMcp } from './supabase.js'
+import { vercelMcp } from './vercel.js'
 
-const builtInMcps: McpDefinition[] = [
-  vercelMcp,
-  supabaseMcp,
-  githubMcp,
-  railwayMcp,
-]
+import type { McpDefinition } from '../types/index.js'
 
-const mcpMap = new Map<string, McpDefinition>(
-  builtInMcps.map(m => [m.name, m]),
-)
+const builtInMcps: McpDefinition[] = [vercelMcp, supabaseMcp, githubMcp, railwayMcp]
+
+const mcpMap = new Map<string, McpDefinition>(builtInMcps.map((m) => [m.name, m]))
 
 export function getMcpDefinition(name: string): McpDefinition | undefined {
   return mcpMap.get(name)
@@ -24,7 +18,7 @@ export function getAllMcpDefinitions(): McpDefinition[] {
 }
 
 export function getMcpNames(): string[] {
-  return builtInMcps.map(m => m.name)
+  return builtInMcps.map((m) => m.name)
 }
 
 export function registerMcp(mcp: McpDefinition): void {

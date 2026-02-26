@@ -1,18 +1,21 @@
-import { Command } from 'commander'
-import { join } from 'node:path'
 import { cp } from 'node:fs/promises'
+import path from 'node:path'
+
 import { confirm } from '@inquirer/prompts'
-import { log } from '../utils/logger.js'
+import { Command } from 'commander'
+
 import { loadProjectManifest, ensureLoggedIn, saveProjectManifest } from '../core/config.js'
 import { GitHubSync } from '../core/github-sync.js'
 import { fileExists, readTextFile, readJsonFile, ensureDir } from '../utils/fs.js'
+import { log } from '../utils/logger.js'
+
 import type { ForgeProjectManifest } from '../types/index.js'
 
 export function pullCommand(): Command {
   return new Command('pull')
     .description('Pull configs from your central config repository')
     .option('--force', 'Overwrite without confirmation')
-    .action(async (options) => {
+    .action(async (options: { force?: boolean }) => {
       const cwd = process.cwd()
       log.title('claude-forge pull')
 
@@ -37,7 +40,7 @@ export function pullCommand(): Command {
 
       // Use remote manifest's file list — it has the complete set
       const remoteManifest = await readJsonFile<ForgeProjectManifest>(
-        join(repoDir, 'manifest.json'),
+        path.join(repoDir, 'manifest.json'),
       )
       const filesToPull = remoteManifest?.managedFiles ?? manifest.managedFiles
 
@@ -46,10 +49,10 @@ export function pullCommand(): Command {
       let updated = 0
 
       for (const file of filesToPull) {
-        const remotePath = join(repoDir, file)
-        const localPath = join(cwd, file)
+        const remotePath = path.join(repoDir, file)
+        const localPath = path.join(cwd, file)
 
-        if (!await fileExists(remotePath)) {
+        if (!(await fileExists(remotePath))) {
           log.dim(`  Skip (not in repo): ${file}`)
           continue
         }
@@ -74,7 +77,7 @@ export function pullCommand(): Command {
           }
         }
 
-        await ensureDir(join(localPath, '..'))
+        await ensureDir(path.join(localPath, '..'))
         await cp(remotePath, localPath, { recursive: true })
         log.file('Updated', file)
         updated++
@@ -90,6 +93,8 @@ export function pullCommand(): Command {
       })
 
       log.blank()
-      log.success(`Pulled ${updated} files from "${globalConfig.repoOwner}/${globalConfig.repoName}"`)
+      log.success(
+        `Pulled ${updated} files from "${globalConfig.repoOwner}/${globalConfig.repoName}"`,
+      )
     })
 }

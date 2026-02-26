@@ -1,7 +1,13 @@
 import { Command } from 'commander'
-import { log } from '../utils/logger.js'
-import { askForDescription, reviewGeneratedContent, askForAuthToken } from '../prompts/add-prompts.js'
+
 import { generateMcpFromDescription, saveGeneratedMcp } from '../generators/ai-mcp.js'
+import {
+  askForDescription,
+  reviewGeneratedContent,
+  askForAuthToken,
+} from '../prompts/add-prompts.js'
+import { log } from '../utils/logger.js'
+
 import type { McpDefinition } from '../types/index.js'
 
 export function addMcpCommand(): Command {
@@ -9,21 +15,24 @@ export function addMcpCommand(): Command {
     .description('Add an MCP server using AI')
     .argument('[description...]', 'Description of the MCP integration')
     .option('-d, --description <text>', 'Description of the MCP integration')
-    .action(async (args: string[], options) => {
+    .action(async (args: string[], options: { description?: string }) => {
       const cwd = process.cwd()
       log.title('claude-forge add mcp')
       log.dim('AI-assisted MCP server configuration')
       log.blank()
 
       const inlineDescription = args.length > 0 ? args.join(' ') : null
-      const description = inlineDescription ?? options.description ?? await askForDescription('MCP server integration')
+      const description =
+        inlineDescription ??
+        options.description ??
+        (await askForDescription('MCP server integration'))
 
       log.step('Generating MCP configuration with AI...')
       let mcp: McpDefinition
       try {
         mcp = await generateMcpFromDescription(description)
-      } catch (error) {
-        log.error(`Generation failed: ${error instanceof Error ? error.message : error}`)
+      } catch (error: unknown) {
+        log.error(`Generation failed: ${error instanceof Error ? error.message : String(error)}`)
         process.exit(1)
       }
 

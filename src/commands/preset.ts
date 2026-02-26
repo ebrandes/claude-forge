@@ -1,16 +1,18 @@
 import { Command } from 'commander'
-import { log } from '../utils/logger.js'
-import { askPresetPrompts } from '../prompts/preset-prompts.js'
-import { getPresetByName, registerPreset } from '../presets/index.js'
-import { GitHubSync } from '../core/github-sync.js'
+
 import { ensureLoggedIn } from '../core/config.js'
+import { GitHubSync } from '../core/github-sync.js'
+import { getPresetByName, registerPreset } from '../presets/index.js'
+import { askPresetPrompts } from '../prompts/preset-prompts.js'
+import { log } from '../utils/logger.js'
+
 import type { PresetDefinition } from '../types/index.js'
 
 export function presetCommand(): Command {
-  const cmd = new Command('preset')
-    .description('Manage custom presets')
+  const cmd = new Command('preset').description('Manage custom presets')
 
-  cmd.command('create')
+  cmd
+    .command('create')
     .description('Create a new custom preset')
     .action(async () => {
       log.title('Create Custom Preset')
@@ -28,16 +30,12 @@ export function presetCommand(): Command {
         name: answers.name,
         displayName: answers.displayName,
         description: answers.description,
-        sections: basePreset.sections.map(s => ({
+        sections: basePreset.sections.map((s) => ({
           ...s,
           enabled: answers.enabledSections.includes(s.sectionId),
         })),
-        hooks: basePreset.hooks.filter(h =>
-          answers.enabledHooks.includes(h.templateId),
-        ),
-        mcps: basePreset.mcps.filter(m =>
-          answers.enabledMcps.includes(m.name),
-        ),
+        hooks: basePreset.hooks.filter((h) => answers.enabledHooks.includes(h.templateId)),
+        mcps: basePreset.mcps.filter((m) => answers.enabledMcps.includes(m.name)),
         settings: { ...basePreset.settings },
         defaults: {
           maxLinesPerFile: answers.maxLinesPerFile,
@@ -48,10 +46,7 @@ export function presetCommand(): Command {
 
       const sync = new GitHubSync()
       await sync.pull()
-      await sync.writeFile(
-        `presets/${answers.name}.json`,
-        JSON.stringify(newPreset, null, 2),
-      )
+      await sync.writeFile(`presets/${answers.name}.json`, JSON.stringify(newPreset, null, 2))
       await sync.commitAndPush(`preset: add ${answers.name}`)
 
       registerPreset(newPreset)

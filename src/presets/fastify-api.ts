@@ -1,13 +1,12 @@
-import type { PresetDefinition } from '../types/index.js'
 import { getBaseSections, BASE_DEFAULTS } from './base.js'
+
+import type { PresetDefinition } from '../types/index.js'
 
 export const fastifyApiPreset: PresetDefinition = {
   name: 'fastify-api',
   displayName: 'Fastify REST API',
   description: 'Fastify with TypeScript, validation, and structured routes',
-  sections: [
-    ...getBaseSections().filter(s => s.sectionId !== 'responsive-design'),
-  ],
+  sections: [...getBaseSections().filter((s) => s.sectionId !== 'responsive-design')],
   hooks: [
     {
       name: 'TypeScript Check',

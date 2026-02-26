@@ -1,14 +1,12 @@
-import type { PresetDefinition } from '../types/index.js'
 import { getBaseSections, BASE_DEFAULTS } from './base.js'
+
+import type { PresetDefinition } from '../types/index.js'
 
 export const monorepoPreset: PresetDefinition = {
   name: 'monorepo',
   displayName: 'Monorepo',
   description: 'Monorepo with workspaces (pnpm/npm/yarn), shared configs',
-  sections: [
-    ...getBaseSections(),
-    { sectionId: 'responsive-design', enabled: false },
-  ],
+  sections: [...getBaseSections(), { sectionId: 'responsive-design', enabled: false }],
   hooks: [
     {
       name: 'TypeScript Check',
@@ -20,8 +18,18 @@ export const monorepoPreset: PresetDefinition = {
     },
   ],
   mcps: [
-    { name: 'supabase', reason: 'Manage Supabase database, auth, and migrations', requiresAuth: true, authType: 'token' },
-    { name: 'vercel', reason: 'Deploy and manage Vercel projects', requiresAuth: true, authType: 'token' },
+    {
+      name: 'supabase',
+      reason: 'Manage Supabase database, auth, and migrations',
+      requiresAuth: true,
+      authType: 'token',
+    },
+    {
+      name: 'vercel',
+      reason: 'Deploy and manage Vercel projects',
+      requiresAuth: true,
+      authType: 'token',
+    },
   ],
   settings: {
     permissions: { allow: ['Bash(xargs:*)'] },

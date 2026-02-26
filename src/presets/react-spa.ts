@@ -1,5 +1,6 @@
-import type { PresetDefinition } from '../types/index.js'
 import { getBaseSections, BASE_DEFAULTS } from './base.js'
+
+import type { PresetDefinition } from '../types/index.js'
 
 export const reactSpaPreset: PresetDefinition = {
   name: 'react-spa',
@@ -7,7 +8,11 @@ export const reactSpaPreset: PresetDefinition = {
   description: 'React SPA with Vite, TypeScript, and Tailwind',
   sections: [
     ...getBaseSections(),
-    { sectionId: 'responsive-design', enabled: true, overrides: { responsiveMode: 'mobile-first' } },
+    {
+      sectionId: 'responsive-design',
+      enabled: true,
+      overrides: { responsiveMode: 'mobile-first' },
+    },
   ],
   hooks: [
     {
@@ -20,7 +25,12 @@ export const reactSpaPreset: PresetDefinition = {
     },
   ],
   mcps: [
-    { name: 'vercel', reason: 'Deploy and manage Vercel projects', requiresAuth: true, authType: 'token' },
+    {
+      name: 'vercel',
+      reason: 'Deploy and manage Vercel projects',
+      requiresAuth: true,
+      authType: 'token',
+    },
   ],
   settings: {
     permissions: { allow: ['Bash(xargs:*)'] },

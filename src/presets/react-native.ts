@@ -1,15 +1,12 @@
-import type { PresetDefinition } from '../types/index.js'
 import { getBaseSections, BASE_DEFAULTS } from './base.js'
+
+import type { PresetDefinition } from '../types/index.js'
 
 export const reactNativePreset: PresetDefinition = {
   name: 'react-native',
   displayName: 'React Native / Expo',
   description: 'React Native with Expo, TypeScript, and mobile-first design',
-  sections: [
-    ...getBaseSections().filter(s =>
-      s.sectionId !== 'responsive-design',
-    ),
-  ],
+  sections: [...getBaseSections().filter((s) => s.sectionId !== 'responsive-design')],
   hooks: [
     {
       name: 'TypeScript Check',
