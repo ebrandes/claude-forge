@@ -3,6 +3,19 @@
     "allow": ["Bash(xargs:*)"]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/protect-files.sh",
+            "timeout": 5,
+            "statusMessage": "Checking protected files..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
@@ -12,6 +25,29 @@
             "command": "bash .claude/hooks/check-ts.sh",
             "timeout": 30,
             "statusMessage": "Checking TypeScript..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-file-size.sh",
+            "timeout": 5,
+            "statusMessage": "Checking file size..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-lint.sh",
+            "timeout": 30,
+            "statusMessage": "Checking ESLint..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'LEMBRETE POS-COMPACTACAO: Max 400 linhas/arquivo. Performance first. LEFT JOIN nunca INNER. DEV project: ebiskcwydlcuqlvjsbqx. NUNCA db push sem autorizacao. Siga CLAUDE.md.'"
           }
         ]
       }
