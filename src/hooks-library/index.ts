@@ -1,6 +1,9 @@
 import { checkBuildHook } from './check-build.js'
 import { checkLintStagedHook } from './check-lint-staged.js'
 import { checkLintHook } from './check-lint.js'
+import { checkPhpLintHook } from './check-php-lint.js'
+import { checkPhpSyntaxHook } from './check-php-syntax.js'
+import { checkPhpTestsHook } from './check-php-tests.js'
 import { checkTestsHook } from './check-tests.js'
 import { checkTsHook } from './check-ts.js'
 
@@ -21,6 +24,9 @@ const hookTemplates: HookTemplate[] = [
   checkLintStagedHook,
   checkBuildHook,
   checkTestsHook,
+  checkPhpSyntaxHook,
+  checkPhpLintHook,
+  checkPhpTestsHook,
 ]
 
 const hookMap = new Map<string, HookTemplate>(hookTemplates.map((h) => [h.id, h]))

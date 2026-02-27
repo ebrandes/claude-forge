@@ -275,8 +275,14 @@ async function pullFromRepo(
 
 async function runFullSetup(cwd: string): Promise<void> {
   const detected = await detectStack(cwd)
-  if (detected.framework) {
-    log.info(`Detected: ${detected.framework} (${detected.language ?? 'unknown'})`)
+  if (detected.substacks.length > 0) {
+    log.info(`Detected ${detected.substacks.length} stack(s):`)
+    for (const sub of detected.substacks) {
+      const toolsInfo = sub.tools.length > 0 ? ` [${sub.tools.join(', ')}]` : ''
+      log.dim(
+        `  ${sub.path === '.' ? 'root' : sub.path} → ${sub.framework} (${sub.language})${toolsInfo}`,
+      )
+    }
     if (detected.presetSuggestion) {
       log.dim(`  Suggested preset: ${detected.presetSuggestion}`)
     }
@@ -301,7 +307,8 @@ async function runFullSetup(cwd: string): Promise<void> {
     mobileFirstRoutes: answers.mobileFirstRoutes,
     desktopFirstRoutes: answers.desktopFirstRoutes,
     projectDescription: answers.projectDescription,
-    techStack: [detected.framework ?? answers.preset],
+    techStack:
+      detected.substacks.length > 0 ? detected.substacks.map((s) => s.framework) : [answers.preset],
   }
 
   const activeSections = preset.sections

@@ -3,6 +3,8 @@ import { flutterAppPreset } from './flutter-app.js'
 import { monorepoPreset } from './monorepo.js'
 import { nextAppPreset } from './next-app.js'
 import { nodeLibPreset } from './node-lib.js'
+import { phpApiPreset } from './php-api.js'
+import { phpVitePreset } from './php-vite.js'
 import { reactNativePreset } from './react-native.js'
 import { reactSpaPreset } from './react-spa.js'
 
@@ -15,6 +17,8 @@ const builtInPresets: PresetDefinition[] = [
   reactSpaPreset,
   reactNativePreset,
   nodeLibPreset,
+  phpApiPreset,
+  phpVitePreset,
   monorepoPreset,
 ]
 

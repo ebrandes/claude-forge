@@ -70,15 +70,17 @@ export async function askInitPrompts(detected: DetectedStack): Promise<InitAnswe
 
   let presetName: string
 
-  if (detected.presetSuggestion && detected.framework) {
-    log.success(`Detected: ${detected.framework} → using "${detected.presetSuggestion}" preset`)
+  const suggestedPreset = detected.presetSuggestion
+  if (suggestedPreset && detected.substacks.length > 0) {
+    const stackNames = detected.substacks.map((s) => s.framework).join(' + ')
+    log.success(`Detected: ${stackNames} → using "${suggestedPreset}" preset`)
     const useDetected = await confirm({
-      message: `Use "${detected.presetSuggestion}" preset?`,
+      message: `Use "${suggestedPreset}" preset?`,
       default: true,
     })
 
     if (useDetected) {
-      presetName = detected.presetSuggestion
+      presetName = suggestedPreset
     } else {
       const presets = listPresets()
       presetName = await select({
@@ -124,7 +126,7 @@ export async function askInitPrompts(detected: DetectedStack): Promise<InitAnswe
       max: 1000,
     })) ?? preset.defaults.maxLinesPerFile
 
-  const isWebProject = ['next-app', 'react-spa'].includes(presetName)
+  const isWebProject = ['next-app', 'react-spa', 'php-vite'].includes(presetName)
   let responsiveMode: InitAnswers['responsiveMode']
   let mobileFirstRoutes: string[] | undefined
   let desktopFirstRoutes: string[] | undefined
