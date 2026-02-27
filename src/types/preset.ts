@@ -1,5 +1,22 @@
 import type { SectionParams } from './section.js'
 
+export type HookEvent =
+  | 'PostToolUse'
+  | 'PreToolUse'
+  | 'Stop'
+  | 'UserPromptSubmit'
+  | 'SessionStart'
+  | 'SubAgentToolUse'
+
+export const VALID_HOOK_EVENTS: HookEvent[] = [
+  'PostToolUse',
+  'PreToolUse',
+  'Stop',
+  'UserPromptSubmit',
+  'SessionStart',
+  'SubAgentToolUse',
+]
+
 export interface PresetDefinition {
   name: string
   displayName: string
@@ -20,7 +37,7 @@ export interface SectionConfig {
 
 export interface HookConfig {
   name: string
-  event: 'PostToolUse' | 'PreToolUse'
+  event: HookEvent
   matcher: string
   templateId: string
   timeout: number

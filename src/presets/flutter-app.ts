@@ -1,4 +1,4 @@
-import { getBaseSections, BASE_DEFAULTS } from './base.js'
+import { getBaseSections, getSecurityHooks, BASE_DEFAULTS } from './base.js'
 
 import type { PresetDefinition } from '../types/index.js'
 
@@ -11,7 +11,7 @@ export const flutterAppPreset: PresetDefinition = {
       (s) => s.sectionId !== 'responsive-design' && s.sectionId !== 'accessibility',
     ),
   ],
-  hooks: [],
+  hooks: [...getSecurityHooks()],
   mcps: [],
   settings: {
     permissions: { allow: ['Bash(xargs:*)'] },

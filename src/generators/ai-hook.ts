@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { buildHookSystemPrompt, buildHookUserPrompt } from '../ai/prompt-templates.js'
 import { generateWithClaude } from '../core/anthropic-client.js'
+import { VALID_HOOK_EVENTS } from '../types/preset.js'
 import { writeTextFile, readJsonFile, writeJsonFile, ensureDir } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 
@@ -41,8 +42,10 @@ function validateHookTemplate(obj: unknown): asserts obj is HookTemplate {
   for (const field of required) {
     if (!hook[field]) throw new Error(`Missing required field: ${field}`)
   }
-  if (hook.event !== 'PostToolUse' && hook.event !== 'PreToolUse') {
-    throw new Error(`Invalid event: ${String(hook.event)}. Must be PostToolUse or PreToolUse`)
+  if (!VALID_HOOK_EVENTS.includes(hook.event as (typeof VALID_HOOK_EVENTS)[number])) {
+    throw new Error(
+      `Invalid event: ${String(hook.event)}. Must be one of: ${VALID_HOOK_EVENTS.join(', ')}`,
+    )
   }
   if (typeof hook.timeout !== 'number') {
     throw new TypeError('timeout must be a number')

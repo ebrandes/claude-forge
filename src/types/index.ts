@@ -1,5 +1,6 @@
 export type { Section, SectionParams } from './section.js'
 export type {
+  HookEvent,
   PresetDefinition,
   SectionConfig,
   HookConfig,
@@ -7,6 +8,8 @@ export type {
   SettingsOverrides,
   PresetDefaults,
 } from './preset.js'
+export type { RuleDefinition } from './rule.js'
+export type { AgentDefinition } from './agent.js'
 export type {
   ForgeGlobalConfig,
   ForgeProjectManifest,

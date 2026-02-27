@@ -1,4 +1,4 @@
-import { getBaseSections, BASE_DEFAULTS } from './base.js'
+import { getBaseSections, getSecurityHooks, BASE_DEFAULTS } from './base.js'
 
 import type { PresetDefinition } from '../types/index.js'
 
@@ -55,6 +55,7 @@ export const phpVitePreset: PresetDefinition = {
       timeout: 30,
       required: true,
     },
+    ...getSecurityHooks(),
   ],
   mcps: [],
   settings: {

@@ -1,4 +1,25 @@
-import type { SectionConfig } from '../types/index.js'
+import type { HookConfig, SectionConfig } from '../types/index.js'
+
+export function getSecurityHooks(): HookConfig[] {
+  return [
+    {
+      name: 'Protect Sensitive Files',
+      event: 'PreToolUse',
+      matcher: 'Edit|Write|Read',
+      templateId: 'protect-sensitive-files',
+      timeout: 5,
+      required: false,
+    },
+    {
+      name: 'Protect Main Branch',
+      event: 'PreToolUse',
+      matcher: 'Bash',
+      templateId: 'protect-main-branch',
+      timeout: 5,
+      required: false,
+    },
+  ]
+}
 
 export function getBaseSections(): SectionConfig[] {
   return [

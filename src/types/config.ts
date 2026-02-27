@@ -17,6 +17,8 @@ export interface ForgeProjectManifest {
   hooks: string[]
   mcps: string[]
   skills: string[]
+  rules: string[]
+  agents: string[]
   customSections: CustomSection[]
   managedFiles: string[]
 }

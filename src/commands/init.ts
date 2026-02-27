@@ -353,6 +353,8 @@ async function runFullSetup(cwd: string): Promise<void> {
     hooks: answers.enabledHooks,
     mcps: answers.enabledMcps,
     skills: [],
+    rules: [],
+    agents: [],
     customSections: [],
     managedFiles: [
       'CLAUDE.md',

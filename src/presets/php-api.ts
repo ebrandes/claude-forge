@@ -1,4 +1,4 @@
-import { getBaseSections } from './base.js'
+import { getBaseSections, getSecurityHooks } from './base.js'
 
 import type { PresetDefinition } from '../types/index.js'
 
@@ -40,6 +40,7 @@ export const phpApiPreset: PresetDefinition = {
       timeout: 60,
       required: false,
     },
+    ...getSecurityHooks(),
   ],
   mcps: [],
   settings: {
